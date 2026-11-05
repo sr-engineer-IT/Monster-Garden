@@ -1,0 +1,11 @@
+# Project place file
+/Monster-Garden.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+sourcemap.json
+
+# Built place file (build-place.bat)
+/MonsterGarden.rbxlx

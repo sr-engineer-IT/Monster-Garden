@@ -1,0 +1,2 @@
+Save 3D models here as <Name>.rbxm (Studio: right-click the model > Save to File...).
+The list of names the game looks for is in Resources/Model-Names.md. Rebuild after adding.
