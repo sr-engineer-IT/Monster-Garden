@@ -7,6 +7,7 @@
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local PolicyService = game:GetService("PolicyService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
@@ -15,6 +16,7 @@ local Products = require(ConfigFolder:WaitForChild("Products"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Util = require(Shared:WaitForChild("Util"))
+local GameMath = require(Shared:WaitForChild("GameMath"))
 
 local S = require(script.Parent.Parent.Registry)
 
@@ -49,8 +51,56 @@ local function giveCosmetic(data: any, cosmetic: any)
 	end
 end
 
+-- Paid random items (Roblox policy) ------------------------------------------------------------------
+-- Some countries ban random items bought with Robux. PolicyService tells us per player. For those
+-- players crates cannot be bought, and any crate they own or earn opens to a FIXED item (the next
+-- cosmetic they don't have yet, in list order) instead of a random one. If the check fails we
+-- assume restricted, which is the safe side.
+local restricted: { [Player]: boolean } = {}
+
+function MonetizationService.RandomItemsRestricted(player: Player): boolean
+	local cached = restricted[player]
+	if cached ~= nil then
+		return cached
+	end
+	local ok, info = pcall(function()
+		return PolicyService:GetPolicyInfoForPlayerAsync(player)
+	end)
+	local value = true
+	if ok and type(info) == "table" and info.ArePaidRandomItemsRestricted ~= nil then
+		value = info.ArePaidRandomItemsRestricted == true
+	end
+	if player.Parent then
+		restricted[player] = value
+		player:SetAttribute("NoPaidRandom", value) -- the store hides crates and odds
+	end
+	return value
+end
+
+local function isCrate(id: string): boolean
+	return id == "dp_crate1" or id == "dp_crate10"
+end
+
+-- Fixed (non-random) crate result: the first cosmetic in the list the player doesn't own yet
+local function openFixed(player: Player, data: any)
+	for _, cosmetic in Products.Cosmetics do
+		local owned = if cosmetic.Kind == "Title" then data.Titles[(string.gsub(cosmetic.Name, " %(title%)", ""))] == true else data.Inventory.Cosmetics[cosmetic.Id] == true
+		if not owned then
+			giveCosmetic(data, cosmetic)
+			Remotes.Get("CrateOpened"):FireClient(player, { Name = cosmetic.Name, Rarity = cosmetic.Rarity, Duplicate = false })
+			return
+		end
+	end
+	data.Inventory.Items.recolor = (data.Inventory.Items.recolor or 0) + 1
+	Remotes.Get("CrateOpened"):FireClient(player, { Name = "Recolor Token", Rarity = "Common", Duplicate = true })
+end
+
 -- One crate: odds come from Weight; the pity rule guarantees Rare+ within CratePityCount crates
 local function openCrate(player: Player, data: any)
+	if MonetizationService.RandomItemsRestricted(player) then
+		openFixed(player, data)
+		return
+	end
 	data.CratePity += 1
 	local weights: { [string]: number } = {}
 	local forceRare = data.CratePity >= Products.CratePityCount
@@ -149,10 +199,6 @@ end
 
 -- Products ------------------------------------------------------------------------------------------------------
 
-local function earningsPerMinute(data: any): number
-	return Config.CoinPack.EarningsPerMinuteBase + Config.CoinPack.EarningsPerMinutePerLevel * data.GardenLevel
-end
-
 local function grantProduct(player: Player, data: any, product: Products.Product)
 	local id = product.Id
 	if id == "dp_rename" then
@@ -168,8 +214,8 @@ local function grantProduct(player: Player, data: any, product: Products.Product
 	elseif id == "dp_growth" then
 		-- Does not stack: buying again only refreshes the timer
 		data.Boosts.GrowthUntil = os.time() + Products.GrowthBoost.DurationSeconds
-	elseif id == "dp_coin_s" or id == "dp_coin_l" then
-		data.Coins += math.floor(Products.CoinPackMinutes[id] * earningsPerMinute(data))
+	elseif Products.CoinPackMinutes[id] then
+		data.Coins += GameMath.CoinPackAmount(Products.CoinPackMinutes[id], data.GardenLevel)
 	elseif id == "dp_tierskip" then
 		S.SeasonService.AddXP(player, Config.Season.XPPerTier)
 	end
@@ -260,6 +306,10 @@ local function onPurchaseRequest(player: Player, data: any, id: any)
 		notify(player, "This item unlocks later in the game.")
 		return
 	end
+	if isCrate(item.Id) and MonetizationService.RandomItemsRestricted(player) then
+		notify(player, "Crates are not available in your region.")
+		return
+	end
 	if pass then
 		if data.Purchases.PassesOwned[pass.Id] then
 			notify(player, "You already own this.")
@@ -288,6 +338,17 @@ function MonetizationService.Start()
 	S.AntiExploit.Bind("EquipCosmetic", onEquip)
 	S.DataService.ProfileLoaded:Connect(function(player: Player, data: any)
 		task.spawn(checkOwnership, player, data)
+	end)
+	-- Look up each player's paid-random-items policy as they join (cached for the session)
+	local function lookup(player: Player)
+		task.spawn(MonetizationService.RandomItemsRestricted, player)
+	end
+	Players.PlayerAdded:Connect(lookup)
+	for _, player in Players:GetPlayers() do
+		lookup(player)
+	end
+	Players.PlayerRemoving:Connect(function(player)
+		restricted[player] = nil
 	end)
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, assetId, purchased)
 		local data = S.DataService.GetData(player)

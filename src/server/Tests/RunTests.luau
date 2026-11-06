@@ -29,6 +29,12 @@ test("XP curve: early levels at 100, 283, 520, 800", function(check)
 	check(GameMath.XPToNext(4) == 800, `L4 = {GameMath.XPToNext(4)}`)
 end)
 
+test("Coin packs: minutes x (30 + 25 x level)", function(check)
+	check(GameMath.CoinPackAmount(12, 1) == 660, `small at L1 = {GameMath.CoinPackAmount(12, 1)}`)
+	check(GameMath.CoinPackAmount(30, 5) == 4650, `medium at L5 = {GameMath.CoinPackAmount(30, 5)}`)
+	check(GameMath.CoinPackAmount(60, 20) == 31800, `large at L20 = {GameMath.CoinPackAmount(60, 20)}`)
+end)
+
 test("Growth uses timestamps and soil level", function(check)
 	local now = 1000000
 	local carrot = { Type = "carrot", PlantedAt = now - 20, HarvestsLeft = 1, WaterTaps = 0, Mutations = {} }

@@ -7,4 +7,5 @@
 return {
 	Building_wood_fence = { Turn = 90 }, -- gate stood across the path instead of in line with the fence
 	Building_reinforced_fence = { Turn = 90 }, -- same kind of gate model
+	Bench = { Turn = 90 }, -- benches faced sideways around the fountain; now they face the water
 } :: { [string]: { Turn: number?, Scale: number? } }

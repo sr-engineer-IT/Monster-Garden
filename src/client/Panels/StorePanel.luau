@@ -3,6 +3,7 @@
 -- crate odds are shown before buying, Roblox's own purchase prompt is the confirmation, and
 -- nothing here is pushed at the player: the store is only opened from the menu.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
@@ -10,6 +11,7 @@ local Config = require(ConfigFolder:WaitForChild("Config"))
 local Products = require(ConfigFolder:WaitForChild("Products"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameMath = require(Shared:WaitForChild("GameMath"))
+local Util = require(Shared:WaitForChild("Util"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local Client = script.Parent.Parent
@@ -49,10 +51,32 @@ function StorePanel.Open()
 	end
 	Kit.Label({ Text = "Everything in the game can be earned by playing. The store sells looks and time-savers only.", TextSize = 14, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 
+	-- Players in countries where paid random items are not allowed see no crates or odds
+	local noRandom = Players.LocalPlayer:GetAttribute("NoPaidRandom") == true
 	if (data.Inventory.Items.crate or 0) > 0 then
-		itemRow(list, nextOrder(), `Open a crate ({data.Inventory.Items.crate} left)`, "Earned from the Moon Season", "Open", true, function()
+		local info = if noRandom then "Gives the next cosmetic you don't have yet" else "Earned from the Moon Season"
+		itemRow(list, nextOrder(), `Open a crate ({data.Inventory.Items.crate} left)`, info, "Open", true, function()
 			Remotes.Get("PurchaseRequest"):FireServer("open_crate")
 		end)
+	end
+
+	-- Coin packs first: the exact amount for your level and how many are left today
+	Kit.Heading(list, `{Kit.Icons.Coins} Coins`, nextOrder())
+	local today = Util.DayNumber()
+	for _, product in Products.DevProducts do
+		local minutes = (Products.CoinPackMinutes :: any)[product.Id]
+		if minutes then
+			local amount = GameMath.CoinPackAmount(minutes, data.GardenLevel)
+			local cap = data.Purchases.DailyCaps[product.Id]
+			local used = if cap and cap.Day == today then cap.Count else 0
+			local left = (product.DailyCap or 99) - used
+			local soon = product.AssetId == 0
+			local text = if soon then "Soon" elseif left <= 0 then "Tomorrow" else `R$ {product.Price}`
+			local info = if left <= 0 then "Daily limit reached, come back tomorrow" else `{left} left today · grows with your level`
+			itemRow(list, nextOrder(), `+{Util.FormatNumber(amount)} coins  ({product.Name})`, info, text, not soon and left > 0, function()
+				Remotes.Get("PurchaseRequest"):FireServer(product.Id)
+			end)
+		end
 	end
 
 	Kit.Heading(list, "Passes", nextOrder())
@@ -68,21 +92,27 @@ function StorePanel.Open()
 
 	Kit.Heading(list, "Items", nextOrder())
 	for _, product in Products.DevProducts do
-		local soon = product.AssetId == 0
-		local locked = data.Stage < product.OfferedFromStage
-		local cap = if product.DailyCap then ` (max {product.DailyCap} per day)` else ""
-		local text = if soon then "Soon" elseif locked then "Locked" else `R$ {product.Price}`
-		itemRow(list, nextOrder(), product.Name, product.Effect .. cap, text, not soon and not locked, function()
-			Remotes.Get("PurchaseRequest"):FireServer(product.Id)
-		end)
+		local crate = product.Id == "dp_crate1" or product.Id == "dp_crate10"
+		local coinPack = (Products.CoinPackMinutes :: any)[product.Id] ~= nil -- shown in Coins above
+		if not (crate and noRandom) and not coinPack then
+			local soon = product.AssetId == 0
+			local locked = data.Stage < product.OfferedFromStage
+			local cap = if product.DailyCap then ` (max {product.DailyCap} per day)` else ""
+			local text = if soon then "Soon" elseif locked then "Locked" else `R$ {product.Price}`
+			itemRow(list, nextOrder(), product.Name, product.Effect .. cap, text, not soon and not locked, function()
+				Remotes.Get("PurchaseRequest"):FireServer(product.Id)
+			end)
+		end
 	end
 
-	Kit.Heading(list, "Crate odds", nextOrder())
-	local total = totalWeight()
-	for _, cosmetic in Products.Cosmetics do
-		Kit.Label({ Text = `{cosmetic.Name} ({cosmetic.Rarity}): {string.format("%.1f", cosmetic.Weight / total * 100)}%`, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
+	if not noRandom then
+		Kit.Heading(list, "Crate odds", nextOrder())
+		local total = totalWeight()
+		for _, cosmetic in Products.Cosmetics do
+			Kit.Label({ Text = `{cosmetic.Name} ({cosmetic.Rarity}): {string.format("%.1f", cosmetic.Weight / total * 100)}%`, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
+		end
+		Kit.Label({ Text = `A Rare or better cosmetic is guaranteed within {Products.CratePityCount} crates (you are at {data.CratePity}).`, TextSize = 13, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 	end
-	Kit.Label({ Text = `A Rare or better cosmetic is guaranteed within {Products.CratePityCount} crates (you are at {data.CratePity}).`, TextSize = 13, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 
 	Kit.Heading(list, Products.Club.Name, nextOrder())
 	local club = data.Purchases.PassesOwned.club == true

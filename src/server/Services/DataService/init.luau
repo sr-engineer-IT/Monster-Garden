@@ -109,7 +109,9 @@ end
 function DataService.Init()
 	ProfileStore.SetConstant("AUTO_SAVE_PERIOD", Config.AutosaveSeconds)
 
-	store = ProfileStore.New(Config.DataStoreName, DefaultProfile)
+	-- Studio saves to its own store, so testing (/coins, /level, /resetdata) never touches live players
+	local storeName = if RunService:IsStudio() then Config.DataStoreName .. "_Studio" else Config.DataStoreName
+	store = ProfileStore.New(storeName, DefaultProfile)
 	if RunService:IsStudio() and Config.UseMockDataStoreInStudio then
 		store = store.Mock
 		print("[DataService] Using mock DataStore in Studio")

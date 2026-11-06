@@ -5,7 +5,7 @@
 local Config = {}
 
 -- Server and saving -----------------------------------------------------------
-Config.MaxPlayersPerServer = 12 -- also set in Game Settings > Places
+Config.MaxPlayersPerServer = 8 -- one garden each; also set Max Players = 8 in Game Settings > Places
 Config.DataStoreName = "MoonlitGrove_Profiles"
 Config.ProfileKeyPrefix = "Player_"
 Config.SchemaVersion = 2
@@ -353,9 +353,9 @@ Config.Season = {
 
 Config.VisitCooldownSeconds = 5
 
--- Gardens sit on a 4 x 4 grid. The middle 2 x 2 cells are the Town Square; the 12 outer cells
+-- Gardens sit on a 3 x 3 grid. The middle cell is the Town Square; the 8 outer cells
 -- are gardens, so every garden is next to town.
-local GRID_SIZE = 4
+local GRID_SIZE = 3
 local PLOT_SPACING = 220
 local function plotCenters(): { Vector3 }
 	local list = {}
@@ -379,11 +379,11 @@ Config.World = {
 	GridSize = GRID_SIZE,
 	PlotCenters = PLOT_CENTERS,
 	PlotCount = #PLOT_CENTERS,
-	GridHalf = GRID_SIZE / 2 * PLOT_SPACING, -- outer ring road line (440)
+	GridHalf = GRID_SIZE / 2 * PLOT_SPACING, -- outer ring road line (330)
 	PlotSpacing = PLOT_SPACING,
 	PlotHalfSize = 70,
 	GroundY = 0, -- top of the baseplate
-	WorldHalfSize = 850, -- playable world; mountains rise beyond it
+	WorldHalfSize = 700, -- playable world; mountains rise beyond it
 	GateWidth = 18,
 	HedgeHeight = 4,
 	MonsterSpawnOutside = 30,
@@ -422,11 +422,12 @@ Config.World = {
 	RescueNestOutside = 40, -- rescue nest distance outside the west gate
 	-- Town Square shops (offsets from the world center). Each opens the merchant.
 	TownShops = {
-		{ Id = "Shop_Seeds", Name = "Seed Shop", Offset = Vector3.new(-92, 0, -92), Color = Color3.fromRGB(90, 190, 90) },
-		{ Id = "Shop_Sell", Name = "Sell Stand", Offset = Vector3.new(92, 0, -92), Color = Color3.fromRGB(255, 190, 60) },
-		{ Id = "Shop_Eggs", Name = "Egg Hatchery", Offset = Vector3.new(92, 0, 92), Color = Color3.fromRGB(150, 110, 230) },
+		{ Id = "Shop_Seeds", Name = "Seed Shop", Offset = Vector3.new(-70, 0, -70), Color = Color3.fromRGB(90, 190, 90) },
+		{ Id = "Shop_Sell", Name = "Sell Stand", Offset = Vector3.new(70, 0, -70), Color = Color3.fromRGB(255, 190, 60) },
+		{ Id = "Shop_Eggs", Name = "Egg Hatchery", Offset = Vector3.new(70, 0, 70), Color = Color3.fromRGB(150, 110, 230) },
 	},
-	TownPlazaRadius = 60,
+	TownPlazaRadius = 44,
+	TownBoardOffset = Vector3.new(-70, 0, 70), -- notice board corner
 }
 
 -- Kill switches (section 23.3). Flip to true to disable a feature without a new version.

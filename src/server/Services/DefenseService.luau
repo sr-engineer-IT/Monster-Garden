@@ -151,7 +151,8 @@ local function buildVisual(player: Player, slot: Slot, record: any?)
 	if slot.Kind == "Gate" then
 		local outwardDir = ((Config.World.Gates :: any)[slot.Gate or "N"] :: Vector3).Unit
 		facing = CFrame.lookAt(p, p + outwardDir)
-		options = { Height = 7, Collide = true } -- a bit taller than the 4-stud fence
+		-- 7 studs tall, then stretched sideways to fill the whole opening between the gate posts
+		options = { Height = 7, FitWidth = Config.World.GateWidth, Collide = true }
 	end
 	local art = Assets.Replace(model, `Building_{record.Type}`, facing, options)
 	if art and broken then

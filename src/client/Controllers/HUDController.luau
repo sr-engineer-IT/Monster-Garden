@@ -249,8 +249,14 @@ local function buildLayout()
 	local right = Kit.New("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 10), Size = UDim2.fromOffset(190, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = gui })
 	vlist(right, 8, Enum.HorizontalAlignment.Right)
 	fit(right)
-	local _, coins = currencyPill(right, Kit.Icons.Coins, C.Coins, 1)
+	local coinPill, coins = currencyPill(right, Kit.Icons.Coins, C.Coins, 1)
 	coinsLabel = coins
+	coinsLabel.Size = UDim2.new(1, -96, 1, 0)
+	-- "+" opens the store at the coin packs (top of the store)
+	local plus = Kit.Button({ Text = "+", TextSize = 26, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -5, 0.5, 0), Size = UDim2.fromOffset(36, 36), BackgroundColor3 = C.Good, ZIndex = 2, Parent = coinPill }, function()
+		panels("StorePanel").Open()
+	end)
+	plus:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(1, 0)
 	essencePill, essenceLabel = currencyPill(right, Kit.Icons.Essence, C.Essence, 2)
 	essencePill.Visible = false
 

@@ -29,7 +29,7 @@ local OUTER = EDGE + 340 -- mountains reach out to here
 local BOX_X = math.ceil((WORLD.GridHalf + 8) / 4) * 4
 local BOX_Z = BOX_X
 
-local LAKE = { Center = Vector3.new(640, 0, 640), Radius = 70 }
+local LAKE = { Center = Vector3.new(480, 0, 480), Radius = 65 }
 
 local GRASS = Color3.fromRGB(96, 158, 74)
 
@@ -381,7 +381,7 @@ local function buildTown()
 	end
 
 	-- notice board on the fourth corner
-	local boardAt = center + Vector3.new(-92, 0, 92)
+	local boardAt = center + WORLD.TownBoardOffset
 	local facing = CFrame.lookAt(boardAt, center)
 	Build.Part({ Size = Vector3.new(14, 9, 0.6), CFrame = facing * CFrame.new(0, 6, 0), Color = Color3.fromRGB(150, 105, 65), Material = Enum.Material.WoodPlanks, CanCollide = true, Parent = town })
 	for _, x in { -6.5, 6.5 } do
@@ -404,20 +404,20 @@ local function buildTown()
 	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 30, 30), CFrame = CFrame.new(boardAt + Vector3.new(0, 0.22, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(196, 186, 165), Material = Enum.Material.Cobblestone, Parent = town })
 
 	-- park: trees, bushes and flower beds in the town grass, clear of roads, plaza and shops
-	local edge = WORLD.PlotSpacing - 14
+	local edge = WORLD.PlotSpacing / 2 - 12 -- town cell, inside the ring road
 	local placed, tries = 0, 0
-	while placed < 46 and tries < 2000 do
+	while placed < 14 and tries < 2000 do
 		tries += 1
 		local x = rng:NextNumber(-edge, edge)
 		local z = rng:NextNumber(-edge, edge)
 		local p = Vector3.new(x, GROUND, z)
 		local clear = math.abs(x) > 16 and math.abs(z) > 16 and p.Magnitude > plaza + 22
 		for _, shop in WORLD.TownShops do
-			if (p - shop.Offset).Magnitude < 30 then
+			if (p - shop.Offset).Magnitude < 22 then
 				clear = false
 			end
 		end
-		if (p - Vector3.new(-92, 0, 92)).Magnitude < 26 then
+		if (p - WORLD.TownBoardOffset).Magnitude < 20 then
 			clear = false
 		end
 		if clear then
@@ -429,9 +429,9 @@ local function buildTown()
 			end
 		end
 	end
-	for _, q in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+	for _, q in { Vector3.new(1, 0, 0), Vector3.new(-1, 0, 0), Vector3.new(0, 0, 1), Vector3.new(0, 0, -1) } do
 		for k = 0, 1 do
-			local p = q * (plaza + 30 + k * 10)
+			local p = q * (plaza + 16 + k * 8)
 			Props.FlowerBed(CFrame.lookAt(p, Vector3.zero) + Vector3.new(0, GROUND + 0.2, 0), 12, town, rng)
 		end
 	end

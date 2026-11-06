@@ -51,8 +51,9 @@ Products.DevProducts = {
 	{ Id = "dp_crate1", Name = "Cosmetic Crate", AssetId = 0, OfferedFromStage = 4, Price = 49, Effect = "One random cosmetic (odds shown)" },
 	{ Id = "dp_crate10", Name = "Cosmetic Crate x10", AssetId = 0, OfferedFromStage = 4, Price = 399, Effect = "Ten crates" },
 	{ Id = "dp_growth", Name = "Growth Boost", AssetId = 0, OfferedFromStage = 6, Price = 49, DailyCap = 3, Effect = "Crops grow 1.5x faster for 30 minutes" },
-	{ Id = "dp_coin_s", Name = "Small Coin Pack", AssetId = 0, OfferedFromStage = 6, Price = 49, DailyCap = 3, Effect = "About 12 minutes of earnings at your level" },
-	{ Id = "dp_coin_l", Name = "Large Coin Pack", AssetId = 0, OfferedFromStage = 6, Price = 149, DailyCap = 1, Effect = "About 1 hour of earnings at your level" },
+	{ Id = "dp_coin_s", Name = "Small Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 49, DailyCap = 3, Effect = "Coins worth about 12 minutes of play at your level" },
+	{ Id = "dp_coin_m", Name = "Medium Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 99, DailyCap = 2, Effect = "Coins worth about 30 minutes of play at your level" },
+	{ Id = "dp_coin_l", Name = "Large Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 149, DailyCap = 1, Effect = "Coins worth about 1 hour of play at your level" },
 	{ Id = "dp_tierskip", Name = "Season Tier Skip", AssetId = 0, OfferedFromStage = 3, Price = 49, Effect = "Skip one tier of the Moon Season" },
 } :: { Product }
 
@@ -104,7 +105,7 @@ Products.PassCosmetics = {
 Products.NoOffersBeforeStage = 3
 Products.CratePityCount = 20 -- a Rare or better cosmetic is guaranteed within 20 crates
 Products.GrowthBoost = { Mult = 1.5, DurationSeconds = 1800, Stacks = false }
-Products.CoinPackMinutes = { dp_coin_s = 12, dp_coin_l = 60 } -- minutes of average earnings
+Products.CoinPackMinutes = { dp_coin_s = 12, dp_coin_m = 30, dp_coin_l = 60 } -- minutes of average earnings
 Products.MaxBoostTotal = 0.50 -- boosts never stack past +50%
 Products.SpendingReminderAfterPurchases = 5 -- per day
 

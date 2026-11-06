@@ -295,4 +295,10 @@ function GameMath.NestSlots(data: any): number
 	return breeding.BaseNestSlots + math.floor(data.GardenLevel / breeding.NestSlotsPerLevels) + (if data.Purchases.PassesOwned.pass_nest then 1 else 0)
 end
 
+-- Coins a coin pack gives: minutes of average earnings at the player's Garden Level.
+-- Used by the server (grant) and the store (shown amount), so they always match.
+function GameMath.CoinPackAmount(minutes: number, level: number): number
+	return math.floor(minutes * (Config.CoinPack.EarningsPerMinuteBase + Config.CoinPack.EarningsPerMinutePerLevel * level))
+end
+
 return GameMath

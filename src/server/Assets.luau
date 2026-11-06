@@ -31,6 +31,7 @@ end
 export type Options = {
 	Height: number?, -- scale so the model is this tall
 	Width: number?, -- or scale so its widest side is this wide
+	FitWidth: number?, -- then stretch sideways only to exactly this width (gates)
 	Collide: boolean?, -- solid (default false)
 	Query: boolean?, -- clickable/raycastable (default true)
 }
@@ -167,6 +168,41 @@ function Assets.Bounds(model: Model): (CFrame, Vector3)
 	return CFrame.new((minV + maxV) / 2), maxV - minV
 end
 
+-- Stretch a model along the world X axis only (its width once placed facing -Z), keeping height
+-- and depth. Used for gates so a door model fills the whole opening without becoming huge.
+function Assets.StretchX(model: Model, targetWidth: number)
+	local box, size = Assets.Bounds(model)
+	if size.X <= 0.01 then
+		return
+	end
+	local k = targetWidth / size.X
+	local cx = box.Position.X
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			local cf = d.CFrame
+			-- which of the part's own axes points most along world X
+			local axes = { cf.RightVector, cf.UpVector, -cf.LookVector }
+			local best, bestDot = 1, 0
+			for i, axis in axes do
+				local dot = math.abs(axis.X)
+				if dot > bestDot then
+					best, bestDot = i, dot
+				end
+			end
+			local stretch = Vector3.new(if best == 1 then k else 1, if best == 2 then k else 1, if best == 3 then k else 1)
+			local newPos = Vector3.new(cx + (cf.Position.X - cx) * k, cf.Position.Y, cf.Position.Z)
+			d.Size = d.Size * stretch
+			d.CFrame = cf.Rotation + newPos
+			local mesh = d:FindFirstChildWhichIsA("DataModelMesh")
+			if mesh and mesh:IsA("SpecialMesh") then
+				mesh.Scale = mesh.Scale * stretch
+			end
+		elseif d:IsA("Attachment") then
+			-- attachments follow their part automatically
+		end
+	end
+end
+
 -- Clone a model by name, scaled and anchored. Returns nil if there is no such model.
 function Assets.Clone(name: string, options: Options?): Model?
 	local folder = source()
@@ -225,6 +261,9 @@ function Assets.Clone(name: string, options: Options?): Model?
 		pcall(function()
 			model:ScaleTo(model:GetScale() * scale)
 		end)
+	end
+	if options and options.FitWidth then
+		Assets.StretchX(model, options.FitWidth)
 	end
 	return model
 end

@@ -10,7 +10,7 @@ forest regions and UI are all built by code, so there is nothing to place by han
 3. Run `rojo serve`, open an empty Baseplate place in Studio and click **Connect** in the Rojo plugin.
 4. Press **Play**.
 5. For saving: publish the place, then turn on **Game Settings > Security > Enable Studio Access to API Services**.
-6. To launch: **File > Publish to Roblox**, set Max Players to 12, make the experience public.
+6. To launch: **File > Publish to Roblox**, set Max Players to 8 (one garden each), make the experience public.
 7. Robux items: create each pass/product on the Creator Dashboard and paste its id into `src/config/Products.luau`
    (`AssetId = 0` shows "Coming soon"). Garden Club needs a subscription id in `Products.Club.SubscriptionId`.
 
@@ -39,7 +39,7 @@ shown odds and a pity rule, Garden Club, Moon Season pass (free and premium trac
 
 ## World
 
-12 gardens sit in a ring around the Town Square (fountain, Seed Shop, Sell Stand, Egg Hatchery,
+8 gardens sit in a ring around the Town Square (fountain, Seed Shop, Sell Stand, Egg Hatchery,
 notice board, park). Each garden has a picket fence, a homestead (cottage, shed, well, mailbox,
 scarecrow) and trees. Around the gardens: forest hills, a lake, four themed explore areas and a
 ring of mountains. All of it is built by code (`WorldService`, `PlotService`, `Props`).

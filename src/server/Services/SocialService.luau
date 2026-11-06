@@ -6,6 +6,7 @@
 local MemoryStoreService = game:GetService("MemoryStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
@@ -147,7 +148,7 @@ end
 local function refreshBoards()
 	for _, category in LB.Categories do
 		local ok = pcall(function()
-			local map = MemoryStoreService:GetSortedMap(LB.MapName .. "_" .. category.Id)
+			local map = MemoryStoreService:GetSortedMap(LB.MapName .. (if RunService:IsStudio() then "_Studio_" else "_") .. category.Id)
 			for _, player in Players:GetPlayers() do
 				local data = S.DataService.GetData(player)
 				if data then
