@@ -28,6 +28,7 @@ local function basics(touch: boolean): { { any } }
 	local use = if touch then "tap the button that pops up" else "press E"
 	return {
 		{ "Getting started", {
+			"Grow your garden by day. Defend it from monsters by night!",
 			"This is your private garden. Your goal is always shown at the top of the screen.",
 			"A glowing object with a HERE marker shows where to go next.",
 			"The line under the goal tells you what to do while you wait.",

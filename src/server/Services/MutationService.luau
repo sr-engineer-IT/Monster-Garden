@@ -101,6 +101,8 @@ function MutationService.Grant(player: Player, creatureId: string, mutationId: s
 		end
 		table.remove(creature.Mutations, lowestIndex)
 	end
+	-- The very first Moonlit glow on the starter creature is the game's first "wow" moment
+	local firstGlow = mutationId == "Moonlit" and creature.Bonded and not data.TutorialDone.FirstMoonlit
 	table.insert(creature.Mutations, mutationId)
 	if mutationId == "Moonlit" and creature.Bonded then
 		data.TutorialDone.FirstMoonlit = true
@@ -110,7 +112,7 @@ function MutationService.Grant(player: Player, creatureId: string, mutationId: s
 	end
 	data.Stats.Mutations = (data.Stats.Mutations or 0) + 1
 	local name = GameMath.CreatureName(creature)
-	Remotes.Get("MutationEarned"):FireClient(player, { Creature = name, Mutation = mutation.Name, Rarity = mutation.Rarity, Reason = reason or mutation.Reason })
+	Remotes.Get("MutationEarned"):FireClient(player, { Creature = name, Mutation = mutation.Name, Rarity = mutation.Rarity, Reason = reason or mutation.Reason, Special = firstGlow })
 	S.CreatureService.RefreshLook(player, creatureId)
 	S.DataService.MarkChanged(player)
 	return true

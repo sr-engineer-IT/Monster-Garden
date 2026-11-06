@@ -14,6 +14,7 @@ Close the place without saving → run `build-place.bat` → open `MonsterGarden
 - [ ] Creatures hop when they walk and breathe when they stand. Pet one: it does a happy jump.
 - [ ] Monsters waddle when they walk. Hit one: it shakes and flashes white.
 - [ ] Open **Quests**. Claim works.
+- [ ] New player (`/resetdata`, Stop, Play): survive the first night. A big "LUCKY!" screen with confetti shows Bun turning Moonlit, and one crop glows.
 - [ ] Open **Store**. Prices show (no "Soon").
 - [ ] No **red** text in Output. (Yellow text is OK.)
 
@@ -31,6 +32,7 @@ Go to **create.roblox.com** → **Creations** → **Moonlit Grove**.
 
 - [ ] **Publish settings → Game details** → upload `Resources\Images\icon.png` (Icon)
 - [ ] Same page → upload `Resources\Images\thumbnail-1.png` (Thumbnail)
+- [ ] Same page → **Description**: copy and paste the text from `Resources\Description.txt`
 - [ ] **Monetization → Passes** → there are exactly **9** passes
 - [ ] **Open Cloud → API Keys** → delete the key. Delete the file `.roblox-api-key.txt`.
 

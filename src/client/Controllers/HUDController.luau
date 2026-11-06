@@ -111,6 +111,64 @@ function HUDController.ShowBanner(title: string, text: string?)
 	task.spawn(runBanners)
 end
 
+-- Big celebration (first Moonlit glow and other special moments): title, confetti, fanfare.
+-- Shows above every panel; tap anywhere or wait 6 seconds to close.
+function HUDController.Celebrate(title: string, line1: string, line2: string?)
+	local screen = Kit.New("ScreenGui", { Name = "Celebration", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 30, Parent = player:WaitForChild("PlayerGui") })
+	local backdrop = Kit.New("TextButton", { Text = "", AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(10, 14, 40), BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Parent = screen })
+	TweenService:Create(backdrop, TweenInfo.new(0.3), { BackgroundTransparency = 0.45 }):Play()
+
+	local card = Kit.New("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.45), Size = UDim2.fromOffset(620, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ZIndex = 5, Parent = screen }, {
+		Kit.New("UIListLayout", { Padding = UDim.new(0, 10), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	local scale = Kit.New("UIScale", { Scale = 0.3, Parent = card })
+	Kit.Label({ Text = title, TextSize = 72, TextColor3 = C.Coins, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 80), LayoutOrder = 1, ZIndex = 6, Parent = card })
+	Kit.Label({ Text = line1, TextSize = 34, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 40), LayoutOrder = 2, ZIndex = 6, Parent = card })
+	if line2 then
+		Kit.Label({ Text = line2, TextSize = 20, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 24), LayoutOrder = 3, ZIndex = 6, Parent = card })
+	end
+	Kit.Label({ Text = "Tap to continue", TextSize = 16, TextColor3 = C.Muted, Size = UDim2.new(1, 0, 0, 20), LayoutOrder = 4, ZIndex = 6, Parent = card })
+	local camera = Workspace.CurrentCamera
+	local viewport = if camera then camera.ViewportSize else Vector2.new(1280, 720)
+	local target = math.clamp(math.min(viewport.Y / 760, viewport.X / 1100), 0.55, 1)
+	TweenService:Create(scale, TweenInfo.new(0.55, Enum.EasingStyle.Back), { Scale = target }):Play()
+
+	-- confetti
+	local colors = { C.Coins, C.Good, C.Bad, C.Premium, Color3.fromRGB(110, 200, 255), Color3.fromRGB(255, 140, 200) }
+	for i = 1, 90 do
+		local piece = Kit.New("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(math.random(), 0, -0.05 - math.random() * 0.3, 0),
+			Size = UDim2.fromOffset(math.random(8, 14), math.random(14, 22)),
+			Rotation = math.random(0, 360),
+			BackgroundColor3 = colors[(i % #colors) + 1],
+			BorderSizePixel = 0,
+			ZIndex = 4,
+			Parent = screen,
+		})
+		local fall = TweenInfo.new(2.2 + math.random() * 1.8, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		TweenService:Create(piece, fall, { Position = UDim2.new(piece.Position.X.Scale + (math.random() - 0.5) * 0.25, 0, 1.1, 0), Rotation = piece.Rotation + math.random(-540, 540) }):Play()
+	end
+
+	pcall(function()
+		require(script.Parent:WaitForChild("SoundController")).Play("LevelUp")
+	end)
+	local closed = false
+	local function close()
+		if closed then
+			return
+		end
+		closed = true
+		TweenService:Create(scale, TweenInfo.new(0.2), { Scale = 0 }):Play()
+		TweenService:Create(backdrop, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+		task.delay(0.3, function()
+			screen:Destroy()
+		end)
+	end
+	backdrop.Activated:Connect(close)
+	task.delay(6, close)
+end
+
 function HUDController.Toast(text: string, color: Color3?)
 	local pill = Kit.Pill({ Size = UDim2.fromOffset(0, 40), AutomaticSize = Enum.AutomaticSize.X, Parent = toastHolder }, {
 		Kit.New("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18) }),
@@ -504,7 +562,7 @@ local function tick()
 	local endsAt = player:GetAttribute("PhaseEndsAt")
 	local left = if type(endsAt) == "number" then endsAt - now else 0
 	if phase == "Night" then
-		timerLabel.Text = `{Kit.Icons.Night} Night · dawn in {formatTime(left)}`
+		timerLabel.Text = `{Kit.Icons.Night} Night Â· dawn in {formatTime(left)}`
 		timerLabel.BackgroundColor3 = Color3.fromRGB(60, 50, 160)
 	elseif phase == "Warning" then
 		timerLabel.Text = `{Kit.Icons.Warning} Monsters coming! {formatTime(left)}`
@@ -526,11 +584,11 @@ local function tick()
 		-- Hunger Meter: live from stage 6, greyed teaser from stage 3
 		if data.Unlocks.Hunger then
 			hungerFrame.Visible = true
-			hungerLabel.Text = if hunger.Active then `{Kit.Icons.Hunger} Hunger {math.floor(hunger.Value)} · {hunger.Level}` else `{Kit.Icons.Hunger} Hunger: needs 3 players`
+			hungerLabel.Text = if hunger.Active then `{Kit.Icons.Hunger} Hunger {math.floor(hunger.Value)} Â· {hunger.Level}` else `{Kit.Icons.Hunger} Hunger: needs 3 players`
 			Kit.SetBar(hungerFill, hunger.Value / Config.Hunger.Max)
 		elseif data.Stage >= 3 then
 			hungerFrame.Visible = not danger
-			hungerLabel.Text = `{Kit.Icons.Lock} Hunger Meter · Level 17`
+			hungerLabel.Text = `{Kit.Icons.Lock} Hunger Meter Â· Level 17`
 			Kit.SetBar(hungerFill, 0)
 		else
 			hungerFrame.Visible = false
@@ -597,7 +655,14 @@ function HUDController.Start()
 		HUDController.ShowBanner(`{Kit.Icons.Warning} Monsters approaching!`, direction)
 	end)
 	Remotes.Get("MutationEarned").OnClientEvent:Connect(function(payload)
-		HUDController.ShowBanner(`{payload.Creature} earned {payload.Mutation}!`, `{payload.Rarity} mutation - {payload.Reason}`)
+		if payload.Special then
+			-- first Moonlit glow: the big "wow" moment after the first night
+			task.delay(1.2, function()
+				HUDController.Celebrate(`✨ LUCKY! ✨`, `{payload.Creature} is now {string.upper(payload.Mutation)}!`, `A {payload.Rarity} glow from the moon. Glowing creatures and crops are worth more. Defend every night to find rarer glows!`)
+			end)
+		else
+			HUDController.ShowBanner(`{payload.Creature} earned {payload.Mutation}!`, `{payload.Rarity} mutation - {payload.Reason}`)
+		end
 	end)
 	Remotes.Get("CrateOpened").OnClientEvent:Connect(function(payload)
 		HUDController.ShowBanner(`Crate: {payload.Name}!`, if payload.Duplicate then "Duplicate - you got a Recolor token instead." else `{payload.Rarity} cosmetic. Equip it in Style.`)

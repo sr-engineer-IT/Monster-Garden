@@ -259,6 +259,16 @@ function CropService.RollMoonlit(player: Player): number
 			count += 1
 		end
 	end
+	-- First night: at least one crop always turns Moonlit, so new players see it right away
+	if count == 0 and data.NightsSurvived == 1 then
+		for _, record in data.Crops do
+			if Crops.ById[record.Type] and not isMoonlit(record) then
+				table.insert(record.Mutations, "Moonlit")
+				count = 1
+				break
+			end
+		end
+	end
 	if count > 0 then
 		CropService.RefreshAll(player)
 	end
