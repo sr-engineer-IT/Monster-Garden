@@ -88,6 +88,7 @@ end
 
 -- Models above this many parts keep their block version (too heavy, especially on phones)
 Assets.MaxParts = 1200
+Assets.MaxCropParts = 100 -- crops show on every soil tile (up to 100 per garden)
 
 local function countParts(item: Instance): number
 	local parts = if item:IsA("BasePart") then 1 else 0
@@ -125,7 +126,24 @@ function Assets.SanitizeAll()
 			entry = model
 		end
 		local removed = Assets.Sanitize(entry)
+		-- Crop models: drop any flat soil / ground plate (the game already has soil tiles)
+		if string.sub(entry.Name, 1, 5) == "Crop_" and entry:IsA("Model") then
+			local _, size = Assets.Bounds(entry)
+			for _, d in entry:GetDescendants() do
+				if d:IsA("BasePart") and d.Size.Y < 1.5 and math.min(d.Size.X, d.Size.Z) > math.max(size.X, size.Z) * 0.6 then
+					d:Destroy()
+					removed += 1
+				end
+			end
+		end
 		local parts = countParts(entry)
+		-- Crops appear on every soil tile, so they get a much lower part limit
+		if string.sub(entry.Name, 1, 5) == "Crop_" and parts > Assets.MaxCropParts then
+			heavy += 1
+			tooHeavy[entry.Name] = parts
+			warn(`[Assets] {entry.Name}: {parts} parts is too heavy for a crop (limit {Assets.MaxCropParts}), using the blocky crop. Please find a simpler model.`)
+			continue
+		end
 		if parts == 0 then
 			warn(`[Assets] {entry.Name}: no visible parts, using the block version`)
 			tooHeavy[entry.Name] = 0
