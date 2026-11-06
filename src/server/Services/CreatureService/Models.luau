@@ -105,7 +105,7 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	model.PrimaryPart = body
 
 	-- Real 3D model (assets/models/Creature_<species>.rbxm) replaces the shapes if present
-	local art = Assets.Dress(model, `Creature_{creature.Species}`, body, { Height = size * 1.25, Query = false })
+	local art = Assets.Dress(model, `Creature_{creature.Species}`, body, { Height = size * 1.25, Query = false, AlignLength = true })
 	if art then
 		local tint = if shadow then SHADOW_GLOW elseif moonlit then MOONLIT_GLOW else glow
 		if tint then

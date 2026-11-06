@@ -35,7 +35,7 @@ function Models.Build(lookId: string, name: string, id: string, elder: boolean, 
 	model.PrimaryPart = body
 	-- Real 3D model (assets/models/Monster_<look>.rbxm) replaces the shapes if present.
 	-- The invisible Body stays as the hit box, so clicking and attacking work the same.
-	local art = Assets.Dress(model, `Monster_{lookId}`, body, { Height = size * 1.3 })
+	local art = Assets.Dress(model, `Monster_{lookId}`, body, { Height = size * 1.3, AlignLength = true })
 	if art and elder then
 		local highlight = Instance.new("Highlight")
 		highlight.FillColor = Monsters.ElderTint

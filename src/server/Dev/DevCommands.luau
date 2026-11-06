@@ -10,6 +10,7 @@
 --   /hunger <n>     set the server Hunger Meter
 --   /feast          start Feast Night now (needs stage 9)
 --   /pass <id>      turn a game pass on for testing (e.g. /pass pass_autoharvest)
+--   /zoo            line up every creature and monster model to check which way they face
 --   /test           run the formula unit tests (results in Output)
 --   /resetdata      reset your profile to defaults (rejoin after)
 
@@ -20,8 +21,57 @@ local RunService = game:GetService("RunService")
 local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameMath"))
 
 local S = require(script.Parent.Parent.Registry)
+local Assets = require(script.Parent.Parent.Assets)
+local Build = require(script.Parent.Parent.Build)
 
 local DevCommands = {}
+
+-- /zoo: every Creature_ and Monster_ model in two rows in front of you, placed exactly as the game
+-- places them. They should all LOOK AT YOU. Any that do not need a Turn in ModelFixes.luau.
+local function zoo(player: Player)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local folder = ReplicatedStorage:FindFirstChild("Models")
+	if not root or not folder then
+		return
+	end
+	local old = workspace:FindFirstChild("Zoo")
+	if old then
+		old:Destroy()
+		return -- /zoo again removes it
+	end
+	local zooFolder = Instance.new("Folder")
+	zooFolder.Name = "Zoo"
+	zooFolder.Parent = workspace
+	local rows: { { string } } = { {}, {} }
+	for _, item in folder:GetChildren() do
+		if string.sub(item.Name, 1, 9) == "Creature_" then
+			table.insert(rows[1], item.Name)
+		elseif string.sub(item.Name, 1, 8) == "Monster_" then
+			table.insert(rows[2], item.Name)
+		end
+	end
+	local ground = root.Position.Y - 3
+	for r, names in rows do
+		table.sort(names)
+		for i, name in names do
+			local side = (i - (#names + 1) / 2) * 8
+			local p = root.Position + root.CFrame.LookVector * (14 + r * 10) + root.CFrame.RightVector * side
+			p = Vector3.new(p.X, ground, p.Z)
+			local facing = CFrame.lookAt(p, Vector3.new(root.Position.X, ground, root.Position.Z))
+			local model = Assets.Place(name, facing, zooFolder, { Height = 4, AlignLength = true })
+			local tag = Build.Part({ Size = Vector3.one, Position = p + Vector3.new(0, 6, 0), Transparency = 1, Parent = zooFolder })
+			local gui = Build.Billboard(tag, 160, 30, 0)
+			Build.Label(gui, if model then name else name .. " (skipped)")
+		end
+	end
+	print("[Dev] /zoo: every model should LOOK AT YOU. Tell Claude the names of any that face sideways or away. Type /zoo again to remove them.")
+	task.delay(180, function()
+		if zooFolder.Parent then
+			zooFolder:Destroy()
+		end
+	end)
+end
 
 local function handle(player: Player, message: string)
 	local command, arg = string.match(message, "^/(%a+)%s*(%S*)")
@@ -65,6 +115,8 @@ local function handle(player: Player, message: string)
 		else
 			print("[Dev] Pass ids: pass_plot, pass_nest, pass_inventory, pass_autoharvest, pass_founder, pass_shoptheme, pass_grovetheme, pass_vipflair, pass_season")
 		end
+	elseif command == "zoo" then
+		zoo(player)
 	elseif command == "test" then
 		require(script.Parent.Parent.Tests.RunTests)()
 	elseif command == "resetdata" then

@@ -66,6 +66,7 @@ Rebuild after every code change.
 | `/hunger 95` | Set the server Hunger Meter |
 | `/feast` | Start Feast Night now (needs stage 9) |
 | `/pass pass_autoharvest` | Turn a game pass on for testing (Studio ignores the passes the creator owns) |
+| `/zoo` | Line up every creature and monster model; they should all look at you (type again to remove) |
 | `/test` | Run the formula unit tests (results in Output) |
 | `/resetdata` | Reset your profile (then stop and play again) |
 

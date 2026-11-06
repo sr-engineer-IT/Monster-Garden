@@ -32,6 +32,7 @@ export type Options = {
 	Height: number?, -- scale so the model is this tall
 	Width: number?, -- or scale so its widest side is this wide
 	FitWidth: number?, -- then stretch sideways only to exactly this width (gates)
+	AlignLength: boolean?, -- turn so the longest side points forward (animals)
 	Collide: boolean?, -- solid (default false)
 	Query: boolean?, -- clickable/raycastable (default true)
 }
@@ -245,6 +246,16 @@ function Assets.Clone(name: string, options: Options?): Model?
 	-- at the bounding box center (free models often have a tilted pivot).
 	local box = Assets.Bounds(model)
 	model.WorldPivot = CFrame.new(box.Position)
+	-- Animals: a body is longer head-to-tail than side-to-side. Turn the model so its long side
+	-- points forward (Z), whatever way it was built. (A model can still face backwards: fix
+	-- that with Turn = 180 in ModelFixes; use /zoo in Studio to check them all.)
+	if options and options.AlignLength then
+		local _, size = Assets.Bounds(model)
+		if size.X > size.Z * 1.15 then
+			model:PivotTo(model:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
+			model.WorldPivot = CFrame.new(Assets.Bounds(model).Position)
+		end
+	end
 	-- Per-model turn fix (src/config/ModelFixes.luau) for models whose front faces another way
 	local fix = (ModelFixes :: any)[name]
 	if fix and fix.Turn and fix.Turn ~= 0 then
