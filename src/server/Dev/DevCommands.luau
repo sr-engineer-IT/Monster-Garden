@@ -9,6 +9,7 @@
 --   /age <n>        age all your creatures by n play minutes
 --   /hunger <n>     set the server Hunger Meter
 --   /feast          start Feast Night now (needs stage 9)
+--   /pass <id>      turn a game pass on for testing (e.g. /pass pass_autoharvest)
 --   /test           run the formula unit tests (results in Output)
 --   /resetdata      reset your profile to defaults (rejoin after)
 
@@ -56,6 +57,13 @@ local function handle(player: Player, message: string)
 		local target = math.clamp(math.floor(amount), 1, 60)
 		while data.GardenLevel < target do
 			S.ProgressionService.AddXP(player, GameMath.XPToNext(data.GardenLevel) - data.GardenXP, "Dev")
+		end
+	elseif command == "pass" then
+		-- /pass pass_autoharvest : turn a pass on for testing (/pass alone lists the ids)
+		if S.MonetizationService.TestGrantPass(player, arg) then
+			print(`[Dev] {arg} is now on for {player.Name}`)
+		else
+			print("[Dev] Pass ids: pass_plot, pass_nest, pass_inventory, pass_autoharvest, pass_founder, pass_shoptheme, pass_grovetheme, pass_vipflair, pass_season")
 		end
 	elseif command == "test" then
 		require(script.Parent.Parent.Tests.RunTests)()

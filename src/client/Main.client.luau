@@ -15,6 +15,7 @@ local BOOT_ORDER = {
 	"MonsterMarkerController",
 	"SoundController",
 	"GuideController",
+	"AnimationController",
 }
 
 local PANELS = { "CreaturesPanel", "SocialPanel", "StorePanel", "StallPanel", "TradePanel", "GuidePanel", "QuestsPanel" }

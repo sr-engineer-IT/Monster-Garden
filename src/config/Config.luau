@@ -11,6 +11,7 @@ Config.ProfileKeyPrefix = "Player_"
 Config.SchemaVersion = 2
 Config.AutosaveSeconds = 60
 Config.UseMockDataStoreInStudio = false -- true: Studio never touches real saved data
+Config.StudioIgnoreOwnedPasses = true -- Studio: ignore passes the creator owns automatically (test like a new player)
 Config.OfflineProductionCapHours = 8
 Config.TickRateSeconds = 1
 Config.MaxStoredPurchaseIds = 500 -- oldest receipt ids are trimmed past this
@@ -34,8 +35,8 @@ Config.NightIncomeShare = 0.30 -- surviving a night pays ~30% of average day inc
 
 -- Garden Level ----------------------------------------------------------------
 Config.Level = {
-	XPMultiplier = 100, -- XP to go from L to L+1 = round(XPMultiplier * L ^ XPExponent)
-	XPExponent = 1.5,
+	XPMultiplier = 150, -- XP to go from L to L+1 = round(XPMultiplier * L ^ XPExponent)
+	XPExponent = 1.7, -- tuned 2026-11: Level 15 in about 1 hour was far too fast
 	MaxLevel = 60,
 }
 
@@ -44,7 +45,7 @@ Config.XPSources = {
 	SurviveNightPerMonster = 5,
 	BabyBorn = 30,
 	RescueCreature = 40,
-	CoinsPerSellXP = 10, -- 1 XP per 10 coins earned from selling goods
+	CoinsPerSellXP = 25, -- 1 XP per 25 coins earned from selling goods (was 10: selling gave too much XP)
 	ObjectiveMin = 20,
 	ObjectiveMax = 100,
 }

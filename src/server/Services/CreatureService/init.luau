@@ -319,7 +319,7 @@ function CreatureService.Pet(player: Player, creatureId: string)
 	end
 	creature.Fed = math.min(Config.Fed.Max, creature.Fed + Config.Engagement.PetFedGain)
 	creature.BondXP = (creature.BondXP or 0) + Config.Engagement.PetBondXP
-	runtime.Position += Vector3.new(0, 1.5, 0) -- happy hop
+	runtime.Model:SetAttribute("HappyAt", os.clock()) -- happy spin-jump on every player's screen
 	notify(player, `{GameMath.CreatureName(creature)} loves you!`)
 	S.ObjectiveService.Progress(player, "Pet")
 	S.DataService.MarkChanged(player)

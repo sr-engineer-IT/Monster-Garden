@@ -7,6 +7,7 @@ local Monsters = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("
 
 local Build = require(script.Parent.Parent.Parent.Build)
 local Assets = require(script.Parent.Parent.Parent.Assets)
+local Rig = require(script.Parent.Parent.Parent.Rig)
 
 local Models = {}
 
@@ -48,6 +49,8 @@ function Models.Build(lookId: string, name: string, id: string, elder: boolean, 
 		gui.AlwaysOnTop = true
 	end
 	local fill = Build.Bar(gui, Color3.fromRGB(240, 70, 70), UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
+	-- Smooth waddle / lunge / hit-shake animation on each player's screen (see Rig.luau)
+	Rig.Attach(model, body, "Monster")
 	model.Parent = parent
 	return model, body, fill, size
 end

@@ -18,6 +18,7 @@ local Util = require(Shared:WaitForChild("Util"))
 
 local S = require(script.Parent.Parent.Registry)
 local Models = require(script.Models)
+local Rig = require(script.Parent.Parent.Rig)
 local AI = require(script.AI)
 
 export type Night = {
@@ -366,12 +367,19 @@ function MonsterService.DamageMonster(monsterId: string, amount: number, attacke
 		monster.Contrib[attacker] = (monster.Contrib[attacker] or 0) + amount
 	end
 	monster.HealthFill.Size = UDim2.fromScale(math.max(0, monster.Health / monster.MaxHealth), 1)
-	monster.Body.Color = Color3.new(1, 1, 1)
-	task.delay(0.1, function()
-		if monster.Body.Parent then
-			monster.Body.Color = monster.BodyColor
-		end
-	end)
+	-- Hit feedback: players' screens shake and flash the monster (AnimationController); the
+	-- block-built look also flashes white for a moment
+	Rig.Hit(monster.Model)
+	local look = Rig.Look(monster.Model, monster.Body)
+	if look ~= monster.Body then
+		local original = look.Color
+		look.Color = Color3.new(1, 1, 1)
+		task.delay(0.1, function()
+			if look.Parent then
+				look.Color = original
+			end
+		end)
+	end
 	if monster.Def.Id == "swarmer" and monster.Kind == "Night" then
 		monster.Position -= monster.Facing * Monsters.SwarmerKnockback
 	end

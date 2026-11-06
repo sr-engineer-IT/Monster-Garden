@@ -7,6 +7,7 @@
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local PolicyService = game:GetService("PolicyService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -165,9 +166,22 @@ local function applyPass(player: Player, data: any, passId: string)
 	S.DataService.MarkChanged(player)
 end
 
+-- Studio test command (/pass <id>): turn a pass on without buying it
+function MonetizationService.TestGrantPass(player: Player, passId: string): boolean
+	local data = S.DataService.GetData(player)
+	if not data or not RunService:IsStudio() or Products.PassById[passId] == nil then
+		return false
+	end
+	applyPass(player, data, passId)
+	return true
+end
+
 local function checkOwnership(player: Player, data: any)
 	for _, pass in Products.Passes do
-		if pass.AssetId ~= 0 and not data.Purchases.PassesOwned[pass.Id] then
+		-- In Studio the creator (who owns every pass automatically) plays like a new player;
+		-- passes bought in Studio (free test purchases) still apply
+		local skip = RunService:IsStudio() and Config.StudioIgnoreOwnedPasses
+		if pass.AssetId ~= 0 and not skip and not data.Purchases.PassesOwned[pass.Id] then
 			local ok, owns = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, pass.AssetId)
 			if ok and owns and S.DataService.GetData(player) == data then
 				applyPass(player, data, pass.Id)

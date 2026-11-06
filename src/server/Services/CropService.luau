@@ -16,14 +16,13 @@ local Util = require(Shared:WaitForChild("Util"))
 
 local S = require(script.Parent.Parent.Registry)
 local Build = require(script.Parent.Parent.Build)
+local CropArt = require(script.Parent.Parent.CropArt)
 
 local CropService = {}
 
 local selectedSeed: { [Player]: string } = {}
 local visualKeys: { [Player]: { [string]: string } } = {} -- tileId -> last built visual key
 
-local STEM = Color3.fromRGB(70, 160, 60)
-local MOONLIT_GLOW = Color3.fromRGB(170, 210, 255)
 
 local function notify(player: Player, text: string)
 	Remotes.Get("Notify"):FireClient(player, { Text = text })
@@ -56,34 +55,7 @@ local function buildVisual(tile: BasePart, crop: Crops.Crop, stage: number, moon
 	if stage == 0 then
 		return
 	end
-	local model = Instance.new("Model")
-	model.Name = "Crop"
-	local top = tile.Position + Vector3.new(0, tile.Size.Y / 2, 0)
-	local k = Config.TileSizeStuds / 5 -- plants scale with the soil tile
-
-	if stage == 1 then
-		Build.Part({ Size = Vector3.new(0.4, 0.8, 0.4) * k, Position = top + Vector3.new(0, 0.4 * k, 0), Color = STEM, Parent = model })
-		Build.Ball({ Size = Vector3.new(0.9, 0.4, 0.9) * k, Position = top + Vector3.new(0, 0.8 * k, 0), Color = STEM, Material = Enum.Material.Grass, Parent = model })
-	else
-		local stemHeight = (if stage == 2 then 1.4 else 2) * k
-		Build.Part({ Size = Vector3.new(0.5 * k, stemHeight, 0.5 * k), Position = top + Vector3.new(0, stemHeight / 2, 0), Color = STEM, Parent = model })
-		Build.Ball({ Size = Vector3.one * 1.6 * k, Position = top + Vector3.new(0, stemHeight * 0.6, 0), Color = STEM, Material = Enum.Material.Grass, Parent = model })
-		local fruitSize = (if stage == 2 then crop.FruitSize * 0.5 else crop.FruitSize) * k
-		local fruit = Build.Ball({
-			Size = Vector3.one * fruitSize,
-			Position = top + Vector3.new(0, stemHeight + fruitSize / 2 - 0.2, 0),
-			Color = if moonlit then MOONLIT_GLOW else crop.Color,
-			Material = if moonlit or crop.Glowing then Enum.Material.Neon else Enum.Material.SmoothPlastic,
-			Parent = model,
-		})
-		if moonlit or crop.Glowing then
-			local light = Instance.new("PointLight")
-			light.Color = if moonlit then MOONLIT_GLOW else crop.Color
-			light.Range = 8
-			light.Parent = fruit
-		end
-	end
-	model.Parent = tile
+	CropArt.Build(tile, crop, stage, moonlit) -- blocky crop looks, see CropArt.luau
 end
 
 local function refreshTile(player: Player, data: any, tileId: string, now: number)
@@ -225,10 +197,13 @@ function CropService.OnTileTriggered(player: Player, tileId: string)
 	if record == nil then
 		plant(player, data, tileId)
 	elseif GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
-		harvest(player, data, tileId, record)
+		if harvest(player, data, tileId, record) then
+			CropArt.Burst(tile, "Harvest")
+		end
 	elseif record.WaterTaps < Config.Engagement.WaterTapMaxPerGrowth then
 		record.PlantedAt -= Config.Engagement.WaterTapSeconds
 		record.WaterTaps += 1
+		CropArt.Burst(tile, "Water")
 	end
 	refreshTile(player, data, tileId, now)
 	S.DataService.MarkChanged(player)

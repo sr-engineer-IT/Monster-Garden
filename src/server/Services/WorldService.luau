@@ -460,6 +460,26 @@ local function setupLighting()
 		sky.StarCount = 4000
 		sky.Parent = Lighting
 	end
+	-- Warm sunlight, soft shadows, gentle sun rays and a little more color and contrast
+	Lighting.ColorShift_Top = Color3.fromRGB(255, 236, 205)
+	Lighting.ColorShift_Bottom = Color3.fromRGB(205, 225, 255)
+	pcall(function()
+		(Lighting :: any).ShadowSoftness = 0.35
+	end)
+	if not Lighting:FindFirstChildOfClass("SunRaysEffect") then
+		local rays = Instance.new("SunRaysEffect")
+		rays.Intensity = 0.05
+		rays.Spread = 0.6
+		rays.Parent = Lighting
+	end
+	if not Lighting:FindFirstChild("BaseGrade") then
+		local grade = Instance.new("ColorCorrectionEffect")
+		grade.Name = "BaseGrade"
+		grade.Contrast = 0.08
+		grade.Saturation = 0.1
+		grade.TintColor = Color3.fromRGB(255, 251, 242)
+		grade.Parent = Lighting
+	end
 	if not Lighting:FindFirstChildOfClass("BloomEffect") then
 		local bloom = Instance.new("BloomEffect")
 		bloom.Intensity = 0.6

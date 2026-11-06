@@ -22,11 +22,11 @@ local function test(name: string, run: (check: (boolean, string) -> ()) -> ())
 	table.insert(tests, { Name = name, Run = run })
 end
 
-test("XP curve: early levels at 100, 283, 520, 800", function(check)
-	check(GameMath.XPToNext(1) == 100, `L1 = {GameMath.XPToNext(1)}`)
-	check(GameMath.XPToNext(2) == 283, `L2 = {GameMath.XPToNext(2)}`)
-	check(GameMath.XPToNext(3) == 520, `L3 = {GameMath.XPToNext(3)}`)
-	check(GameMath.XPToNext(4) == 800, `L4 = {GameMath.XPToNext(4)}`)
+test("XP curve: early levels at 150, 487, 971, 1583", function(check)
+	check(GameMath.XPToNext(1) == 150, `L1 = {GameMath.XPToNext(1)}`)
+	check(GameMath.XPToNext(2) == 487, `L2 = {GameMath.XPToNext(2)}`)
+	check(GameMath.XPToNext(3) == 971, `L3 = {GameMath.XPToNext(3)}`)
+	check(GameMath.XPToNext(4) == 1583, `L4 = {GameMath.XPToNext(4)}`)
 end)
 
 test("Coin packs: minutes x (30 + 25 x level)", function(check)

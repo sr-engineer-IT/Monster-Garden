@@ -133,8 +133,8 @@ function Behavior.Tick(player: Player, data: any, plot: any, list: { [string]: a
 				runtime.Facing = flat.Unit
 				position += flat.Unit * math.min(flat.Magnitude - 1, speed * dt)
 			end
-			-- Settle back to the ground after a hop; small bounce while walking
-			local targetY = Behavior.GroundY(runtime.Size) + (if moving then math.abs(math.sin(clock * 10)) * 0.4 else 0)
+			-- Settle back to the ground (hopping is animated smoothly on each player's screen)
+			local targetY = Behavior.GroundY(runtime.Size)
 			position = Vector3.new(position.X, position.Y + (targetY - position.Y) * math.min(1, dt * 8), position.Z)
 			runtime.Position = position
 

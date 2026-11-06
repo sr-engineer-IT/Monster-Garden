@@ -12,6 +12,7 @@ local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("
 
 local Build = require(script.Parent.Parent.Parent.Build)
 local Assets = require(script.Parent.Parent.Parent.Assets)
+local Rig = require(script.Parent.Parent.Parent.Rig)
 
 export type Parts = {
 	Model: Model,
@@ -130,6 +131,9 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	local petPrompt = Build.Prompt(body, "Pet", GameMath.CreatureName(creature), { Distance = 6 })
 	local feedPrompt = Build.Prompt(body, "Feed", "", { Distance = 6 })
 	feedPrompt.KeyboardKeyCode = Enum.KeyCode.R -- different key so it shows next to Pet
+
+	-- Smooth hop / idle animation on each player's screen (see Rig.luau, AnimationController)
+	Rig.Attach(model, body, "Creature")
 
 	return {
 		Model = model,

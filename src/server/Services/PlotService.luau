@@ -104,6 +104,19 @@ local function buildMerchant(plot: Plot)
 			Build.Ball({ Size = Vector3.one * 1.3, Position = base + Vector3.new(-3 + i * 1.6, 4.1, 0), Color = color, Parent = cart })
 		end
 	end
+	-- seed sacks and a produce crate beside the cart
+	for i, info in { { 5.6, 0.2, Color3.fromRGB(255, 140, 40) }, { 6.4, 1.9, Color3.fromRGB(220, 60, 120) }, { 7.2, 0.4, Color3.fromRGB(240, 210, 60) } } do
+		local at = facing * CFrame.new(info[1], 0, info[2])
+		Build.Part({ Size = Vector3.new(1.4, 1.8, 1.2), CFrame = at * CFrame.new(0, 0.9, 0) * CFrame.Angles(0, math.rad(i * 25), 0), Color = Color3.fromRGB(214, 190, 140), Material = Enum.Material.Fabric, CanCollide = true, Parent = cart })
+		Build.Part({ Size = Vector3.new(0.9, 0.35, 0.8), CFrame = at * CFrame.new(0, 1.95, 0), Color = Color3.fromRGB(190, 165, 115), Material = Enum.Material.Fabric, Parent = cart })
+		Build.Part({ Size = Vector3.new(0.6, 0.6, 0.6), CFrame = at * CFrame.new(0, 2.2, 0), Color = info[3], Parent = cart })
+	end
+	local crateAt = facing * CFrame.new(-5.8, 0, 0.6)
+	Build.Part({ Size = Vector3.new(2.2, 1.2, 1.6), CFrame = crateAt * CFrame.new(0, 0.6, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, CanCollide = true, Parent = cart })
+	for j, color in { Color3.fromRGB(255, 140, 40), Color3.fromRGB(230, 60, 60), Color3.fromRGB(120, 200, 80), Color3.fromRGB(255, 200, 60) } do
+		Build.Part({ Size = Vector3.new(0.6, 0.6, 0.6), CFrame = crateAt * CFrame.new(-0.75 + (j - 1) * 0.5, 1.4, (j % 2) * 0.4 - 0.2), Color = color, Parent = cart })
+	end
+
 	local gui = Build.Billboard(body, 160, 40, 6)
 	gui.Size = UDim2.fromScale(8, 2)
 	Build.Label(gui, "Merchant", { TextColor3 = Color3.fromRGB(255, 230, 120), Font = Enum.Font.FredokaOne })
@@ -163,6 +176,53 @@ local function buildDecor(model: Model, center: Vector3, index: number)
 	-- flower beds inside along the fence
 	for _, spot in { Vector3.new(-24, 0, -65), Vector3.new(24, 0, -65), Vector3.new(-26, 0, 65), Vector3.new(28, 0, 65) } do
 		Props.FlowerBed(CFrame.new(center + spot + Vector3.new(0, g + 0.2, 0)), 16, decor, rng)
+	end
+
+	-- small grass tufts, flowers and pebbles in the open grass, away from paths, the farm and every
+	-- building spot (keeps room to build and to run around at night)
+	local reserved = { WORLD.MerchantOffset, WORLD.StallOffset, WORLD.PenOffset, WORLD.TowerSpot, WORLD.ShelterSpot, WORLD.SpiritGateOffset, WORLD.CreatureHome, WORLD.SpawnOffset }
+	for _, list in { WORLD.LanternPosts, WORLD.TrapSpots, WORLD.NestSpots } do
+		for _, p in list do
+			table.insert(reserved, p)
+		end
+	end
+	local placed, tries = 0, 0
+	while placed < 26 and tries < 400 do
+		tries += 1
+		local x, z = rng:NextNumber(-HALF + 4, HALF - 4), rng:NextNumber(-HALF + 4, HALF - 4)
+		local ok = math.max(math.abs(x), math.abs(z)) > inner + 2 and math.abs(x) > 9 and math.abs(z) > 9
+		if ok and z < -inner + 0 and z > -64 and math.abs(x) < 36 then
+			ok = false -- Extra Plot area (north)
+		end
+		if ok and math.abs(z) > 61 and math.abs(x) > 14 and math.abs(x) < 38 then
+			ok = false -- flower beds
+		end
+		for _, r in reserved do
+			if ok and (Vector3.new(x, 0, z) - Vector3.new(r.X, 0, r.Z)).Magnitude < 9 then
+				ok = false
+			end
+		end
+		if ok then
+			placed += 1
+			local at = center + Vector3.new(x, g + 0.2, z)
+			local roll = rng:NextNumber()
+			if roll < 0.45 then
+				for i = 1, 3 do -- grass tuft
+					Build.Part({ Size = Vector3.new(0.25, rng:NextNumber(0.8, 1.4), 0.25), CFrame = CFrame.new(at + Vector3.new((i - 2) * 0.35, 0.5, rng:NextNumber(-0.2, 0.2))) * CFrame.Angles(0, 0, math.rad((i - 2) * 18)), Color = Color3.fromRGB(80, rng:NextInteger(150, 175), 60), Parent = decor })
+				end
+			elseif roll < 0.8 then
+				local color = ({ Color3.fromRGB(255, 120, 160), Color3.fromRGB(255, 220, 90), Color3.fromRGB(170, 130, 255), Color3.fromRGB(255, 255, 255) })[rng:NextInteger(1, 4)]
+				for i = 1, 3 do -- little flower clump
+					local p = at + Vector3.new(rng:NextNumber(-0.8, 0.8), 0, rng:NextNumber(-0.8, 0.8))
+					Build.Part({ Size = Vector3.new(0.15, 0.7, 0.15), Position = p + Vector3.new(0, 0.35, 0), Color = Color3.fromRGB(70, 150, 60), Parent = decor })
+					Build.Part({ Size = Vector3.new(0.45, 0.3, 0.45), Position = p + Vector3.new(0, 0.8, 0), Color = color, Parent = decor })
+				end
+			else
+				for i = 1, 2 do -- pebbles
+					Build.Part({ Size = Vector3.new(rng:NextNumber(0.6, 1.1), 0.4, rng:NextNumber(0.5, 0.9)), CFrame = CFrame.new(at + Vector3.new(i * 0.7, 0.1, rng:NextNumber(-0.4, 0.4))) * CFrame.Angles(0, rng:NextNumber(0, 3), 0), Color = Color3.fromRGB(140, 140, 145), Material = Enum.Material.Slate, Parent = decor })
+				end
+			end
+		end
 	end
 
 	-- homestead outside the fence, on the side away from town, facing the garden
@@ -351,9 +411,22 @@ function PlotService.IsInsideOwnerPlot(player: Player?, position: Vector3): bool
 	return plot ~= nil and PlotService.IsInside(plot, position)
 end
 
+-- Slight color variation between soil tiles so the farm does not look flat
+local function tileShade(tileId: string): number
+	local h = 0
+	for i = 1, #tileId do
+		h = (h * 31 + string.byte(tileId, i)) % 997
+	end
+	return (h % 7) / 40
+end
+
 local function addTile(plot: Plot, tileId: string, position: Vector3)
-	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = SOIL, Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
+	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = SOIL:Lerp(Color3.fromRGB(150, 105, 65), tileShade(tileId)), Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
 	tile:SetAttribute("TileId", tileId)
+	-- two raised planting rows (the crops sit on them)
+	for _, x in { -1.3, 1.3 } do
+		Build.Part({ Name = "Ridge", Size = Vector3.new(1.5, 0.12, TILE - 1.4), Position = position + Vector3.new(x * (TILE / 8), 0.26, 0), Color = SOIL:Lerp(Color3.fromRGB(160, 115, 75), 0.35), Material = Enum.Material.Ground, Parent = tile })
+	end
 	local prompt = Build.Prompt(tile, "Plant", "Soil", { Distance = 9 })
 	prompt.Triggered:Connect(function(who)
 		if who == plot.Owner then
@@ -379,6 +452,12 @@ function PlotService.BuildTiles(player: Player)
 			local offset = Vector3.new((x - (width - 1) / 2) * TILE, 0.4, (z - (depth - 1) / 2) * TILE)
 			addTile(plot, Util.TileId(x, z), plot.Center + offset)
 		end
+	end
+	-- wooden border around the farm
+	local halfW, halfD = width * TILE / 2 + 0.5, depth * TILE / 2 + 0.5
+	for _, side in { -1, 1 } do
+		Build.Part({ Name = "Border", Size = Vector3.new(halfW * 2 + 1, 0.8, 0.8), Position = plot.Center + Vector3.new(0, 0.4, side * halfD), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = plot.Folders.Tiles })
+		Build.Part({ Name = "Border", Size = Vector3.new(0.8, 0.8, halfD * 2), Position = plot.Center + Vector3.new(side * halfW, 0.4, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = plot.Folders.Tiles })
 	end
 	if data.Purchases.PassesOwned.pass_plot then
 		for i = 0, WORLD.ExtraPlotColumns - 1 do

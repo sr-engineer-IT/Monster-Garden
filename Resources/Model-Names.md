@@ -71,3 +71,17 @@ Baby, Young and Elder creatures use the same model at different sizes. Elders an
 | `Tree_Pine` | Pine tree |
 | `Bush` | Bush |
 | `Rock` | Boulder |
+
+## Crops (optional)
+The game already draws every crop in a blocky style. A model here replaces the **ready** crop.
+| Name | What |
+|---|---|
+| `Crop_carrot` | Carrot (ready) |
+| `Crop_radish` | Radish |
+| `Crop_tomato` | Tomato plant |
+| `Crop_corn` | Corn |
+| `Crop_pumpkin` | Pumpkin |
+| `Crop_glowberry` | Glowberry bush |
+| `Crop_starfruit` | Starfruit tree |
+| `Crop_moonmelon` | Moon Melon |
+| `Crop_lureberry` | Lure Berry bush |

@@ -65,6 +65,7 @@ Rebuild after every code change.
 | `/age 120` | Age all your creatures by 120 play minutes |
 | `/hunger 95` | Set the server Hunger Meter |
 | `/feast` | Start Feast Night now (needs stage 9) |
+| `/pass pass_autoharvest` | Turn a game pass on for testing (Studio ignores the passes the creator owns) |
 | `/test` | Run the formula unit tests (results in Output) |
 | `/resetdata` | Reset your profile (then stop and play again) |
 

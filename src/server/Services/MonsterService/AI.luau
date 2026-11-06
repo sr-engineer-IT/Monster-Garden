@@ -14,6 +14,7 @@ local Util = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Util
 
 local S = require(script.Parent.Parent.Parent.Registry)
 local Assets = require(script.Parent.Parent.Parent.Assets)
+local Rig = require(script.Parent.Parent.Parent.Rig)
 
 local AI = {}
 
@@ -113,8 +114,11 @@ local function updateNight(m: any, night: any, dt: number, ctx: any)
 			if first and first.Transparency ~= transparency then
 				Assets.SetTransparency(art, transparency)
 			end
-		elseif m.Body.Transparency ~= transparency then
-			m.Body.Transparency = transparency
+		else
+			local look = Rig.Look(m.Model, m.Body)
+			if look ~= m.Body and look.Transparency ~= transparency then
+				look.Transparency = transparency
+			end
 		end
 	end
 	if S.PlotService.IsInsideOwnerPlot(owner, m.Position) then
@@ -252,8 +256,8 @@ function AI.Update(m: any, night: any, dt: number, clock: number, ctx: any)
 	end
 
 	if m.Model.Parent then
-		local bob = if m.State == "Attack" or m.State == "Breach" then math.abs(math.sin(clock * 12)) * 0.6 else math.abs(math.sin(clock * 8)) * 0.3
-		local position = m.Position + Vector3.new(0, bob, 0)
+		-- waddle and bob are animated smoothly on each player's screen (AnimationController)
+		local position = m.Position
 		m.Model:PivotTo(CFrame.lookAt(position, position + m.Facing))
 	end
 end
