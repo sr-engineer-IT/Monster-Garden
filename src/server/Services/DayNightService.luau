@@ -53,6 +53,7 @@ local function resolveNight(player: Player, data: any)
 	S.DefenseService.SetLights(player, false)
 
 	data.NightsSurvived += 1
+	S.QuestService.Progress(player, "Night")
 	if data.ShieldNightsLeft > 0 then
 		data.ShieldNightsLeft -= 1
 	end

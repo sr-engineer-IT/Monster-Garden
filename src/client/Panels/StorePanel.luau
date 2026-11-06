@@ -67,7 +67,7 @@ function StorePanel.Open()
 		local minutes = (Products.CoinPackMinutes :: any)[product.Id]
 		if minutes then
 			local amount = GameMath.CoinPackAmount(minutes, data.GardenLevel)
-			local cap = data.Purchases.DailyCaps[product.Id]
+			local cap = (data.Purchases.DailyCaps or {})[product.Id]
 			local used = if cap and cap.Day == today then cap.Count else 0
 			local left = (product.DailyCap or 99) - used
 			local soon = product.AssetId == 0
@@ -114,11 +114,14 @@ function StorePanel.Open()
 		Kit.Label({ Text = `A Rare or better cosmetic is guaranteed within {Products.CratePityCount} crates (you are at {data.CratePity}).`, TextSize = 13, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 	end
 
-	Kit.Heading(list, Products.Club.Name, nextOrder())
+	-- Garden Club (subscription) only shows once it exists: set Products.Club.SubscriptionId
 	local club = data.Purchases.PassesOwned.club == true
-	itemRow(list, nextOrder(), Products.Club.Name, Products.Club.Effect, if club then "Member" elseif Products.Club.SubscriptionId == "" then "Soon" else Products.Club.PriceText, not club and Products.Club.SubscriptionId ~= "", function()
-		Remotes.Get("PurchaseRequest"):FireServer("club")
-	end)
+	if Products.Club.SubscriptionId ~= "" or club then
+		Kit.Heading(list, Products.Club.Name, nextOrder())
+		itemRow(list, nextOrder(), Products.Club.Name, Products.Club.Effect, if club then "Member" else Products.Club.PriceText, not club, function()
+			Remotes.Get("PurchaseRequest"):FireServer("club")
+		end)
+	end
 end
 
 -- One reward cell (Free or Premium) inside a tier row

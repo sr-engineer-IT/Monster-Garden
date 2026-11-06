@@ -136,7 +136,8 @@ function Props.Fence(a: Vector3, b: Vector3, height: number, color: Color3, pare
 	end
 	local mid = (a + b) / 2
 	local cf = CFrame.lookAt(mid, b)
-	part({ Name = "FenceWall", Size = Vector3.new(1, height + 2, length), CFrame = cf + Vector3.new(0, (height + 2) / 2, 0), Transparency = 1, CanCollide = true, Parent = parent })
+	-- invisible wall, much taller than the fence, so nobody can jump over it (use the gates)
+	part({ Name = "FenceWall", Size = Vector3.new(1, 16, length), CFrame = cf + Vector3.new(0, 8, 0), Transparency = 1, CanCollide = true, CanQuery = false, Parent = parent })
 	for _, y in { height * 0.35, height * 0.75 } do
 		part({ Name = "Hedge", Size = Vector3.new(0.4, 0.5, length), CFrame = cf + Vector3.new(0, y, 0), Color = color, Material = Enum.Material.WoodPlanks, Parent = parent })
 	end

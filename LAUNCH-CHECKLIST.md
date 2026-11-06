@@ -27,35 +27,35 @@ Then open the pass → **Sales** → turn on **Item for Sale** → set the price
 
 | Done | Code id | Name | Price | Paste ID here |
 |---|---|---|---|---|
-| [ ] | `pass_plot` | Extra Plot | 199 | |
-| [ ] | `pass_nest` | Extra Nest Slot | 149 | |
-| [ ] | `pass_inventory` | Bigger Inventory | 149 | |
-| [ ] | `pass_autoharvest` | Auto-Harvest | 399 | |
-| [ ] | `pass_founder` | Founder Pass | 499 | |
-| [ ] | `pass_shoptheme` | Shop Stall Themes | 149 | |
-| [ ] | `pass_grovetheme` | Spirit Grove Themes | 199 | |
-| [ ] | `pass_vipflair` | Premium Flair | 99 | |
-| [ ] | `pass_season` | Moon Season Premium | 599 | |
+| [x] | `pass_plot` | Extra Plot | 199 | 2072326781 |
+| [x] | `pass_nest` | Extra Nest Slot | 149 | 2071201228 |
+| [x] | `pass_inventory` | Bigger Inventory | 149 | 2074802252 |
+| [x] | `pass_autoharvest` | Auto-Harvest | 399 | 2071003251 |
+| [x] | `pass_founder` | Founder Pass | 499 | 2069936676 |
+| [x] | `pass_shoptheme` | Shop Stall Themes | 149 | 2072390774 |
+| [x] | `pass_grovetheme` | Spirit Grove Themes | 199 | 2074220257 |
+| [x] | `pass_vipflair` | Premium Flair | 99 | 2074370263 |
+| [x] | `pass_season` | Moon Season Premium | 599 | 2074130271 |
 
 **Developer Products:** Monetization → **Developer Products** → Create → name + price → copy the **ID**.
 
 | Done | Code id | Name | Price | Paste ID here |
 |---|---|---|---|---|
-| [ ] | `dp_rename` | Rename Token | 25 | |
-| [ ] | `dp_recolor` | Recolor Token | 49 | |
-| [ ] | `dp_crate1` | Cosmetic Crate | 49 | |
-| [ ] | `dp_crate10` | Cosmetic Crate x10 | 399 | |
-| [ ] | `dp_growth` | Growth Boost | 49 | |
-| [ ] | `dp_coin_s` | Small Coin Pack | 49 | |
-| [ ] | `dp_coin_m` | Medium Coin Pack | 99 | |
-| [ ] | `dp_coin_l` | Large Coin Pack | 149 | |
-| [ ] | `dp_tierskip` | Season Tier Skip | 49 | |
+| [x] | `dp_rename` | Rename Token | 25 | 3728675911 |
+| [x] | `dp_recolor` | Recolor Token | 49 | 3728675951 |
+| [x] | `dp_crate1` | Cosmetic Crate | 49 | 3728676002 |
+| [x] | `dp_crate10` | Cosmetic Crate x10 | 399 | 3728676086 |
+| [x] | `dp_growth` | Growth Boost | 49 | 3728676148 |
+| [x] | `dp_coin_s` | Small Coin Pack | 49 | 3728676211 |
+| [x] | `dp_coin_m` | Medium Coin Pack | 99 | 3728676264 |
+| [x] | `dp_coin_l` | Large Coin Pack | 149 | 3728676301 |
+| [x] | `dp_tierskip` | Season Tier Skip | 49 | 3728676341 |
 
 - [ ] Put every ID into `src/config/Products.luau`: change `AssetId = 0` to `AssetId = <the ID>`.
       (Or send the filled table to Claude and ask it to do this.)
 - [ ] Rebuild and publish. In the Store, buttons now show prices instead of "Soon".
 - [ ] Buy one pass and one product in Studio (test purchases there are free) and check you received them.
-- [ ] Later (optional): Garden Club subscription. It needs Roblox subscription eligibility, then put the ID in `Products.Club.SubscriptionId`.
+- [x] Garden Club subscription: 199 R$ / month, ID EXP-1765176911641838092.
 
 ---
 
@@ -66,18 +66,18 @@ as `"rbxassetid://<ID>"`. Only use audio that is free to use (made by Roblox or 
 
 | Done | Slot | What it is |
 |---|---|---|
-| [x] | `Banner` | Unlocks and gifts (already set) |
-| [ ] | `Harvest` | Picking a crop (short "pop") |
-| [ ] | `Sell` | Coins (cash register / coin jingle) |
-| [ ] | `Attack` | Hitting a monster (swoosh / bonk) |
-| [ ] | `LevelUp` | Level up (happy fanfare) |
-| [ ] | `NightWarning` | Monsters coming (horn) |
-| [ ] | `Mutation` | Creature mutation (magic chime) |
-| [ ] | `Hatch` | Egg hatching / baby born |
-| [ ] | `Crate` | Opening a crate |
-| [ ] | `Day` | Daytime music / birds (loop) |
-| [ ] | `Night` | Night music (calm but spooky, loop) |
-| [ ] | `Feast` | Feast Night boss music (loop) |
+| [x] | `Banner` | Unlocks and gifts (short happy chime) |
+| [x] | `Harvest` | Picking a crop (short "pop") |
+| [x] | `Sell` | Coins (cash register / coin jingle) |
+| [x] | `Attack` | Hitting a monster (swoosh / bonk) |
+| [x] | `LevelUp` | Level up (happy fanfare) |
+| [x] | `NightWarning` | Monsters coming (horn) |
+| [x] | `Mutation` | Creature mutation (magic chime) |
+| [x] | `Hatch` | Egg hatching / baby born |
+| [x] | `Crate` | Opening a crate |
+| [x] | `Day` | Daytime music / birds (loop) |
+| [x] | `Night` | Night music (calm but spooky, loop) |
+| [x] | `Feast` | Feast Night boss music (loop) |
 
 - [ ] Rebuild, play, and check the volume feels right (Help → Sound ON/OFF should work).
 
@@ -89,7 +89,7 @@ Invite friends to the private game: Creator Dashboard → your game → **Collab
 Send every red error from Output (F9 in a live game) to Claude.
 
 **Alone (Studio chat commands help: `/level 13`, `/night`, `/coins 5000`, `/age 120`, `/test`)**
-- [ ] `/test` in chat: Output says all tests passed (10 tests).
+- [ ] `/test` in chat: Output says all tests passed (11 tests).
 - [ ] New player: the guide opens, the HERE arrow points to the right things.
 - [ ] Plant, water, harvest, sell, buy seeds (E acts on the tile under you).
 - [ ] First night: monsters come through the gates, Attack works, night report shows.
@@ -101,6 +101,8 @@ Send every red error from Output (F9 in a live game) to Claude.
 - [ ] Level 30+: Whisper Forest, Echo Caves nests, taming eggs.
 - [ ] Town Square shops open the merchant.
 - [ ] Season: claim rewards, Claim all.
+- [ ] Quests: finish and claim a daily quest, the all-done bonus, see new quests the next day.
+- [ ] Rebirth: `/level 40`, then Quests → Rebirth (tap twice). Level resets, creatures stay, "★1" shows over your head.
 - [ ] Style: equip glows, themes, titles.
 - [ ] Leave and rejoin: everything saved.
 - [ ] Play on a **phone** (Studio: Test → Device emulator, and on a real phone): buttons fit, no lag.
@@ -169,3 +171,4 @@ Creator Dashboard → your game:
 - [x] 8 players per server.
 - [x] Coin packs (Small / Medium / Large) from the start, exact amount shown, daily limits, "+" button by your coins.
 - [x] Studio testing uses a separate save and leaderboard, so it never touches live players.
+- [x] Daily quests (3 a day + all-done bonus), a weekly quest, and Rebirth at Level 40 (permanent +15% coins / +10% XP each).

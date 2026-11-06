@@ -111,7 +111,7 @@ function ProgressionService.AddXP(player: Player, amount: number, _reason: strin
 	if not data or amount <= 0 then
 		return
 	end
-	data.GardenXP += math.floor(amount)
+	data.GardenXP += math.floor(amount * GameMath.RebirthXPMult(data.Rebirths)) -- rebirth bonus
 	while data.GardenLevel < Config.Level.MaxLevel do
 		local need = GameMath.XPToNext(data.GardenLevel)
 		if data.GardenXP < need then

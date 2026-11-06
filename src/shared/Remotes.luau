@@ -38,6 +38,8 @@ Remotes.ClientToServer = {
 	"ListShopItem", -- kind, key, qty, price
 	"UnlistShopItem", -- listingId
 	"OpenStall", -- ownerUserId
+	"QuestClaim", -- kind ("Daily" | "Weekly" | "Bonus"), index
+	"Rebirth", -- none: rebirth now (server checks the level)
 	"BuyShopItem", -- ownerUserId, listingId
 	"TradeRequest", -- userId
 	"TradeRespond", -- accept bool

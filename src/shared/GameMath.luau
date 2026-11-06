@@ -301,4 +301,22 @@ function GameMath.CoinPackAmount(minutes: number, level: number): number
 	return math.floor(minutes * (Config.CoinPack.EarningsPerMinuteBase + Config.CoinPack.EarningsPerMinutePerLevel * level))
 end
 
+-- Rebirth bonuses (see config/Quests.luau). Used by the server and shown in the Rebirth panel.
+local QuestsConfig = require(ConfigFolder:WaitForChild("Quests"))
+
+function GameMath.RebirthCoinMult(rebirths: number?): number
+	local n = math.min(rebirths or 0, QuestsConfig.Rebirth.MaxBonusRebirths)
+	return 1 + n * QuestsConfig.Rebirth.CoinBonus
+end
+
+function GameMath.RebirthXPMult(rebirths: number?): number
+	local n = math.min(rebirths or 0, QuestsConfig.Rebirth.MaxBonusRebirths)
+	return 1 + n * QuestsConfig.Rebirth.XPBonus
+end
+
+-- Quest goal size for a player's level
+function GameMath.QuestCount(quest: any, level: number): number
+	return math.max(1, math.floor(quest.Base + level * quest.PerLevel))
+end
+
 return GameMath

@@ -33,6 +33,7 @@ local function check(player: Player, data: any)
 end
 
 function ObjectiveService.Progress(player: Player, event: string, amount: number?)
+	S.QuestService.Progress(player, event, amount) -- daily / weekly quests count the same events
 	local data = S.DataService.GetData(player)
 	local objective = data and Objectives.List[data.ObjectiveIndex]
 	if not data or not objective or objective.Event ~= event then

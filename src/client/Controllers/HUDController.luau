@@ -179,6 +179,9 @@ local function buildMenu()
 		{ "Season", Color3.fromRGB(178, 92, 255), function()
 			panels("StorePanel").OpenSeason()
 		end },
+		{ "Quests", Color3.fromRGB(255, 196, 40), function()
+			panels("QuestsPanel").Open()
+		end },
 		{ "Pets", Color3.fromRGB(255, 150, 40), function()
 			panels("CreaturesPanel").Open()
 		end },
@@ -437,6 +440,7 @@ local function onData(newData: any)
 	menuButtons.Ranks.Visible = data.Unlocks.Leaderboards == true
 	setBadge("Season", seasonClaimable())
 	setBadge("Store", data.Inventory.Items.crate or 0)
+	setBadge("Quests", panels("QuestsPanel").Claimable(data))
 
 	local parts = {}
 	for _, crop in Crops.List do

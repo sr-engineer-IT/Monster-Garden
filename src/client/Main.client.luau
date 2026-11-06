@@ -17,7 +17,7 @@ local BOOT_ORDER = {
 	"GuideController",
 }
 
-local PANELS = { "CreaturesPanel", "SocialPanel", "StorePanel", "StallPanel", "TradePanel", "GuidePanel" }
+local PANELS = { "CreaturesPanel", "SocialPanel", "StorePanel", "StallPanel", "TradePanel", "GuidePanel", "QuestsPanel" }
 
 type Module = { Init: (() -> ())?, Start: (() -> ())? }
 local loaded: { Module } = {}

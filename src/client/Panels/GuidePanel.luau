@@ -65,6 +65,8 @@ local function basics(touch: boolean): { { any } }
 		{ "Growing your garden", {
 			"Everything you do gives Garden XP. New levels bring new seeds, bigger plots and new systems.",
 			"Help shows what is coming next. Nothing ever needs Robux.",
+			"Open Quests every day: 3 daily quests and a weekly quest give coins, Essence and Season XP.",
+			"At Garden Level 40 you can Rebirth: start again with a permanent coin and XP bonus, keeping your creatures.",
 		} },
 	}
 end

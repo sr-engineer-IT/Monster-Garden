@@ -333,9 +333,10 @@ local function onSellItems(player: Player, data: any)
 	if not nearMerchant(player) then
 		return
 	end
-	local total = 0
+	local total, sold = 0, 0
 	for key, count in data.Inventory.Goods do
 		total += GameMath.SellValue(key) * count
+		sold += count
 	end
 	if total <= 0 then
 		notify(player, "Nothing to sell yet. Harvest some crops!")
@@ -345,11 +346,13 @@ local function onSellItems(player: Player, data: any)
 	if data.HeistFlag and S.HeistService.IsActive() then
 		total = math.floor(total * (1 + Config.Heist.FlagGoodsCoinBonus))
 	end
+	-- Rebirth bonus: +15% coins per rebirth
+	total = math.floor(total * GameMath.RebirthCoinMult(data.Rebirths))
 	table.clear(data.Inventory.Goods)
 	data.Coins += total
 	notify(player, `Sold for {total} coins!`)
 	S.ProgressionService.AddXP(player, total // Config.XPSources.CoinsPerSellXP, "Sell")
-	S.ObjectiveService.Progress(player, "Sell")
+	S.ObjectiveService.Progress(player, "Sell", sold)
 	S.DataService.MarkChanged(player)
 	EconomyService.OpenMerchant(player)
 end

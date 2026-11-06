@@ -35,6 +35,16 @@ test("Coin packs: minutes x (30 + 25 x level)", function(check)
 	check(GameMath.CoinPackAmount(60, 20) == 31800, `large at L20 = {GameMath.CoinPackAmount(60, 20)}`)
 end)
 
+test("Rebirth bonuses and quest sizes", function(check)
+	check(GameMath.RebirthCoinMult(0) == 1, "no rebirth = no bonus")
+	check(math.abs(GameMath.RebirthCoinMult(2) - 1.3) < 1e-9, `2 rebirths = +30% coins ({GameMath.RebirthCoinMult(2)})`)
+	check(math.abs(GameMath.RebirthXPMult(1) - 1.1) < 1e-9, `1 rebirth = +10% XP ({GameMath.RebirthXPMult(1)})`)
+	check(GameMath.RebirthCoinMult(500) == GameMath.RebirthCoinMult(20), "bonus stops growing after 20 rebirths")
+	local harvest = { Base = 15, PerLevel = 0.8 }
+	check(GameMath.QuestCount(harvest, 1) == 15, `harvest quest at L1 = {GameMath.QuestCount(harvest, 1)}`)
+	check(GameMath.QuestCount(harvest, 40) == 47, `harvest quest at L40 = {GameMath.QuestCount(harvest, 40)}`)
+end)
+
 test("Growth uses timestamps and soil level", function(check)
 	local now = 1000000
 	local carrot = { Type = "carrot", PlantedAt = now - 20, HarvestsLeft = 1, WaterTaps = 0, Mutations = {} }

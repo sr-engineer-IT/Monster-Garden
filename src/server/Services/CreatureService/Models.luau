@@ -118,6 +118,9 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	end
 
 	local gui = Build.Billboard(body, 170, 50, size * 0.6 + 1.8)
+	-- Sized in studs (not screen pixels) so tags stay small and never cover the player
+	gui.Size = UDim2.fromScale(5.5, 1.6)
+	gui.MaxDistance = 50
 	local stars = string.rep("*", #(creature.Mutations or {}))
 	local stageText = if creature.Stage ~= "Adult" then ` ({creature.Stage})` else ""
 	Build.Label(gui, `{GameMath.CreatureName(creature)}{stageText} {stars}`, { Size = UDim2.fromScale(1, 0.46) })

@@ -32,7 +32,7 @@ local profiles: { [Player]: any } = {}
 local dirty: { [Player]: boolean } = {}
 
 -- Values every client can read from player attributes (HUD, other players' cards)
-local REPLICATED_ATTRIBUTES = { "Coins", "Essence", "GardenLevel", "GardenXP", "Stage", "NightsSurvived" }
+local REPLICATED_ATTRIBUTES = { "Coins", "Essence", "GardenLevel", "GardenXP", "Stage", "NightsSurvived", "Rebirths" }
 
 local function replicateAttributes(player: Player, data: ProfileData)
 	for _, key in REPLICATED_ATTRIBUTES do
@@ -43,7 +43,7 @@ end
 -- Client view of the profile: drop purchase receipts
 local function clientSnapshot(data: ProfileData): any
 	local snapshot = Util.DeepCopy(data) :: any
-	snapshot.Purchases = { PassesOwned = snapshot.Purchases.PassesOwned }
+	snapshot.Purchases = { PassesOwned = snapshot.Purchases.PassesOwned, DailyCaps = snapshot.Purchases.DailyCaps } -- receipt ids stay private
 	return snapshot
 end
 

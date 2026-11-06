@@ -34,27 +34,27 @@ export type Cosmetic = {
 local Products = {}
 
 Products.Passes = {
-	{ Id = "pass_plot", Name = "Extra Plot", AssetId = 0, OfferedFromStage = 3, Price = 199, Effect = "+16 farm tiles in an expansion area" },
-	{ Id = "pass_nest", Name = "Extra Nest Slot", AssetId = 0, OfferedFromStage = 4, Price = 149, Effect = "+1 breeding nest slot" },
-	{ Id = "pass_inventory", Name = "Bigger Inventory", AssetId = 0, OfferedFromStage = 4, Price = 149, Effect = "+100 bag space" },
-	{ Id = "pass_autoharvest", Name = "Auto-Harvest", AssetId = 0, OfferedFromStage = 6, Price = 399, Effect = "Auto-harvests ready crops every 10 s" },
-	{ Id = "pass_founder", Name = "Founder Pass", AssetId = 0, OfferedFromStage = 4, Price = 499, Effect = "Founder title, creature glow, garden theme, +50 bag space" },
-	{ Id = "pass_shoptheme", Name = "Shop Stall Themes", AssetId = 0, OfferedFromStage = 5, Price = 149, Effect = "Golden shop stall" },
-	{ Id = "pass_grovetheme", Name = "Spirit Grove Themes", AssetId = 0, OfferedFromStage = 7, Price = 199, Effect = "Starlight Spirit Grove" },
-	{ Id = "pass_vipflair", Name = "Premium Flair", AssetId = 0, OfferedFromStage = 5, Price = 99, Effect = "VIP title" },
-	{ Id = "pass_season", Name = "Moon Season Premium", AssetId = 0, OfferedFromStage = 3, Price = 599, Effect = "Premium track of the Moon Season (cosmetics only)" },
+	{ Id = "pass_plot", Name = "Extra Plot", AssetId = 2072326781, OfferedFromStage = 3, Price = 199, Effect = "+16 farm tiles in an expansion area" },
+	{ Id = "pass_nest", Name = "Extra Nest Slot", AssetId = 2071201228, OfferedFromStage = 4, Price = 149, Effect = "+1 breeding nest slot" },
+	{ Id = "pass_inventory", Name = "Bigger Inventory", AssetId = 2074802252, OfferedFromStage = 4, Price = 149, Effect = "+100 bag space" },
+	{ Id = "pass_autoharvest", Name = "Auto-Harvest", AssetId = 2071003251, OfferedFromStage = 6, Price = 399, Effect = "Auto-harvests ready crops every 10 s" },
+	{ Id = "pass_founder", Name = "Founder Pass", AssetId = 2069936676, OfferedFromStage = 4, Price = 499, Effect = "Founder title, creature glow, garden theme, +50 bag space" },
+	{ Id = "pass_shoptheme", Name = "Shop Stall Themes", AssetId = 2072390774, OfferedFromStage = 5, Price = 149, Effect = "Golden shop stall" },
+	{ Id = "pass_grovetheme", Name = "Spirit Grove Themes", AssetId = 2074220257, OfferedFromStage = 7, Price = 199, Effect = "Starlight Spirit Grove" },
+	{ Id = "pass_vipflair", Name = "Premium Flair", AssetId = 2074370263, OfferedFromStage = 5, Price = 99, Effect = "VIP title" },
+	{ Id = "pass_season", Name = "Moon Season Premium", AssetId = 2074130271, OfferedFromStage = 3, Price = 599, Effect = "Premium track of the Moon Season (cosmetics only)" },
 } :: { Pass }
 
 Products.DevProducts = {
-	{ Id = "dp_rename", Name = "Rename Token", AssetId = 0, OfferedFromStage = 3, Price = 25, Effect = "Rename a creature" },
-	{ Id = "dp_recolor", Name = "Recolor Token", AssetId = 0, OfferedFromStage = 4, Price = 49, Effect = "Change a creature's color only" },
-	{ Id = "dp_crate1", Name = "Cosmetic Crate", AssetId = 0, OfferedFromStage = 4, Price = 49, Effect = "One random cosmetic (odds shown)" },
-	{ Id = "dp_crate10", Name = "Cosmetic Crate x10", AssetId = 0, OfferedFromStage = 4, Price = 399, Effect = "Ten crates" },
-	{ Id = "dp_growth", Name = "Growth Boost", AssetId = 0, OfferedFromStage = 6, Price = 49, DailyCap = 3, Effect = "Crops grow 1.5x faster for 30 minutes" },
-	{ Id = "dp_coin_s", Name = "Small Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 49, DailyCap = 3, Effect = "Coins worth about 12 minutes of play at your level" },
-	{ Id = "dp_coin_m", Name = "Medium Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 99, DailyCap = 2, Effect = "Coins worth about 30 minutes of play at your level" },
-	{ Id = "dp_coin_l", Name = "Large Coin Pack", AssetId = 0, OfferedFromStage = 1, Price = 149, DailyCap = 1, Effect = "Coins worth about 1 hour of play at your level" },
-	{ Id = "dp_tierskip", Name = "Season Tier Skip", AssetId = 0, OfferedFromStage = 3, Price = 49, Effect = "Skip one tier of the Moon Season" },
+	{ Id = "dp_rename", Name = "Rename Token", AssetId = 3728675911, OfferedFromStage = 3, Price = 25, Effect = "Rename a creature" },
+	{ Id = "dp_recolor", Name = "Recolor Token", AssetId = 3728675951, OfferedFromStage = 4, Price = 49, Effect = "Change a creature's color only" },
+	{ Id = "dp_crate1", Name = "Cosmetic Crate", AssetId = 3728676002, OfferedFromStage = 4, Price = 49, Effect = "One random cosmetic (odds shown)" },
+	{ Id = "dp_crate10", Name = "Cosmetic Crate x10", AssetId = 3728676086, OfferedFromStage = 4, Price = 399, Effect = "Ten crates" },
+	{ Id = "dp_growth", Name = "Growth Boost", AssetId = 3728676148, OfferedFromStage = 6, Price = 49, DailyCap = 3, Effect = "Crops grow 1.5x faster for 30 minutes" },
+	{ Id = "dp_coin_s", Name = "Small Coin Pack", AssetId = 3728676211, OfferedFromStage = 1, Price = 49, DailyCap = 3, Effect = "Coins worth about 12 minutes of play at your level" },
+	{ Id = "dp_coin_m", Name = "Medium Coin Pack", AssetId = 3728676264, OfferedFromStage = 1, Price = 99, DailyCap = 2, Effect = "Coins worth about 30 minutes of play at your level" },
+	{ Id = "dp_coin_l", Name = "Large Coin Pack", AssetId = 3728676301, OfferedFromStage = 1, Price = 149, DailyCap = 1, Effect = "Coins worth about 1 hour of play at your level" },
+	{ Id = "dp_tierskip", Name = "Season Tier Skip", AssetId = 3728676341, OfferedFromStage = 3, Price = 49, Effect = "Skip one tier of the Moon Season" },
 } :: { Product }
 
 Products.PassById = {} :: { [string]: Pass }
@@ -73,9 +73,9 @@ end
 
 -- Garden Club subscription (section 13.3). Paste the subscription id ("EXP-...") to enable it.
 Products.Club = {
-	SubscriptionId = "",
+	SubscriptionId = "EXP-1765176911641838092",
 	Name = "Garden Club",
-	PriceText = "Monthly",
+	PriceText = "R$ 199 / month",
 	Effect = "Club title, daily gift of 1 cosmetic crate, +30 bag space",
 	DailyCrates = 1,
 }

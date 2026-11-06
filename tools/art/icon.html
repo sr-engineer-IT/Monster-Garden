@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Moonlit Grove icon</title>
+<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}svg{display:block}</style></head>
+<body>
+<svg id="s" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="scene.js"></script>
+<script>
+const svg = document.getElementById("s");
+defs(svg);
+el("rect", { width: 512, height: 512, fill: "url(#sky)" }, svg);
+stars(svg, 512, 300, 40);
+moon(svg, 395, 120, 62);
+el("path", { d: "M0 330 Q130 290 256 320 T512 310 V512 H0Z", fill: "url(#hillBack)" }, svg);
+pine(svg, 60, 340, 0.55, "#1f4a3e");
+tree(svg, 470, 335, 0.5, "#24563f");
+el("path", { d: "M0 380 Q256 340 512 380 V512 H0Z", fill: "url(#grass)" }, svg);
+fence(svg, 0, 512, 405, 0.55);
+el("path", { d: "M0 420 Q256 400 512 420 V512 H0Z", fill: "#3f9a3f" }, svg);
+cropRow(svg, 20, 470, 0.55, 3, "glowGold", "#ffcf3d");
+cropRow(svg, 380, 470, 0.55, 3, "glowPink", "#ff6fae");
+monster(svg, 395, 470, 0.72);
+bunny(svg, 205, 500, 1.15);
+</script>
+</body></html>

@@ -263,6 +263,13 @@ function Assets.Clone(name: string, options: Options?): Model?
 		end)
 	end
 	if options and options.FitWidth then
+		-- Gates: a gate is always wider than it is deep. Turn the model so its long side runs along
+		-- X (along the fence once placed), whatever way the model was built, then stretch it.
+		local _, size = Assets.Bounds(model)
+		if size.Z > size.X then
+			model:PivotTo(model:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
+			model.WorldPivot = CFrame.new(Assets.Bounds(model).Position)
+		end
 		Assets.StretchX(model, options.FitWidth)
 	end
 	return model

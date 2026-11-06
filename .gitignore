@@ -9,3 +9,6 @@ sourcemap.json
 
 # Built place file (build-place.bat)
 /MonsterGarden.rbxlx
+
+# Roblox Open Cloud API key (never commit)
+/.roblox-api-key.txt

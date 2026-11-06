@@ -12,13 +12,13 @@ local Registry = require(script.Parent:WaitForChild("Registry"))
 
 local Services = script.Parent:WaitForChild("Services")
 
--- Chat window goes to the bottom left so it never covers the coins and menu (top left)
+-- Chat window stays at the top left: the menu buttons are at the bottom left and must stay clickable
 task.spawn(function()
 	pcall(function()
 		local window = game:GetService("TextChatService"):WaitForChild("ChatWindowConfiguration", 10) :: any
 		if window then
 			window.HorizontalAlignment = Enum.HorizontalAlignment.Left
-			window.VerticalAlignment = Enum.VerticalAlignment.Bottom
+			window.VerticalAlignment = Enum.VerticalAlignment.Top
 		end
 	end)
 end)
@@ -50,6 +50,8 @@ local BOOT_ORDER = {
 	"MonetizationService",
 	"SeasonService",
 	"ExploreService",
+	"QuestService",
+	"RebirthService",
 }
 
 Remotes.Setup()

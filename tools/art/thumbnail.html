@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Moonlit Grove thumbnail</title>
+<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}svg{display:block}</style></head>
+<body>
+<svg id="s" width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="scene.js"></script>
+<script>
+const svg = document.getElementById("s");
+defs(svg);
+el("rect", { width: 1920, height: 1080, fill: "url(#sky)" }, svg);
+stars(svg, 1920, 620, 110);
+moon(svg, 1560, 230, 120);
+// far hills and forest
+el("path", { d: "M0 640 Q260 520 520 600 T1040 590 T1560 560 T1920 600 V1080 H0Z", fill: "url(#hillBack)" }, svg);
+for (let i = 0; i < 16; i++) {
+	const x = 40 + i * 125 + (rnd() * 40 - 20), y = 640 - rnd() * 40;
+	if (i % 3 === 0) pine(svg, x, y, 0.9 + rnd() * 0.3, "#1f4a3e"); else tree(svg, x, y, 0.8 + rnd() * 0.3, "#24563f");
+}
+// meadow
+el("path", { d: "M0 720 Q480 650 960 700 T1920 690 V1080 H0Z", fill: "url(#grass)" }, svg);
+cottage(svg, 330, 760, 1.05);
+lantern(svg, 610, 790, 1.0);
+lantern(svg, 1720, 800, 1.0);
+fence(svg, 0, 1920, 800, 1.0);
+// garden
+el("path", { d: "M0 830 Q960 790 1920 830 V1080 H0Z", fill: "#3f9a3f" }, svg);
+cropRow(svg, 120, 930, 1.05, 5, "glowBlue", "#7fdcff");
+cropRow(svg, 1330, 930, 1.05, 6, "glowGold", "#ffcf3d");
+cropRow(svg, 140, 1030, 1.05, 6, "glowPink", "#ff6fae");
+cropRow(svg, 1300, 1030, 1.05, 7, "glowBlue", "#ff8a3d");
+// heroes
+bunny(svg, 760, 1030, 1.55);
+monster(svg, 1220, 1010, 1.35);
+// title
+title(svg, 960, 230, 190, "MOONLIT GROVE");
+const pill = el("g", {}, svg);
+el("rect", { x: 610, y: 280, width: 700, height: 86, rx: 43, fill: "#ff9d1f", stroke: "#2a1050", "stroke-width": 9 }, pill);
+const sub = el("text", { x: 960, y: 342, "text-anchor": "middle", "font-family": "'Segoe UI Black','Arial Black',sans-serif", "font-weight": 900, "font-size": 50, fill: "#fff", stroke: "#2a1050", "stroke-width": 8, "paint-order": "stroke", "letter-spacing": 3 }, pill);
+sub.textContent = "GROW • RAISE • DEFEND";
+</script>
+</body></html>

@@ -130,7 +130,8 @@ function SocialService.RefreshTitle(player: Player)
 	gui.Name = "TitleGui"
 	gui.MaxDistance = 60
 	local title = data.Equipped.Title
-	local text = `Lv {data.GardenLevel}` .. (if title and data.Titles[title] then `  {title}` else "")
+	local stars = if (data.Rebirths or 0) > 0 then `  ★{data.Rebirths}` else ""
+	local text = `Lv {data.GardenLevel}{stars}` .. (if title and data.Titles[title] then `  {title}` else "")
 	Build.Label(gui, text, { TextColor3 = if title then Color3.fromRGB(255, 220, 120) else Color3.fromRGB(230, 230, 240) })
 end
 

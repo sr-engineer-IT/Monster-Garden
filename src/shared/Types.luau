@@ -145,6 +145,8 @@ export type ProfileData = {
 	Season: { XP: number, Claimed: { [string]: boolean } },
 	CratePity: number,
 	Equipped: { Glow: string?, Theme: string?, Title: string? },
+	Quests: { Day: number, Daily: { any }, Week: number, Weekly: { any }, BonusClaimed: boolean },
+	Rebirths: number,
 }
 
 return {}

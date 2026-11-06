@@ -53,6 +53,8 @@ local DefaultProfile: Types.ProfileData = {
 	Season = { XP = 0, Claimed = {} },
 	CratePity = 0,
 	Equipped = {},
+	Quests = { Day = 0, Daily = {}, Week = 0, Weekly = {}, BonusClaimed = false }, -- daily / weekly quests
+	Rebirths = 0,
 }
 
 return DefaultProfile
