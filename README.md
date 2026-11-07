@@ -66,6 +66,12 @@ Rebuild after every code change.
 | `/hunger 95` | Set the server Hunger Meter |
 | `/feast` | Start Feast Night now (needs stage 9) |
 | `/pass pass_autoharvest` | Turn a game pass on for testing (Studio ignores the passes the creator owns) |
+| `/sandbox` | Everything at once: Level 45, coins, Essence, all seeds, max plot, every creature, every defense |
+| `/follow` | All your creatures follow you everywhere, to check which way they walk (type again to stop) |
+| `/gates wood`, `stone`, `iron`, `moon` | Put that gate type on all 4 sides of your garden, to check them |
+| `/attack` | Start the night and send one of every monster type (and an Elder) to attack your garden |
+| `/parade` | One of every monster walks in a circle around you, to check which way they walk (type again to stop) |
+| `/turn pip 90` | Try a direction fix live for one model (creature or monster), then tell Claude the number |
 | `/zoo` | Line up every creature and monster model; they should all look at you (type again to remove) |
 | `/test` | Run the formula unit tests (results in Output) |
 | `/resetdata` | Reset your profile (then stop and play again) |

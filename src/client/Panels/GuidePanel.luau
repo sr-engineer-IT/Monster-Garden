@@ -62,6 +62,7 @@ local function basics(touch: boolean): { { any } }
 			`After your first night, stand at a gate and {use} to build a fence. Monsters must break it first.`,
 			"Lanterns near the gates slow monsters down and scare small ones away.",
 			"Repair damaged defenses in the day (hold the prompt). Traps and stronger fences come later.",
+			"Gates upgrade: Wooden, then Reinforced (takes less damage), Iron at Level 20 (spikes hurt monsters), Moon at Level 35 (glows, strongest).",
 		} },
 		{ "Growing your garden", {
 			"Everything you do gives Garden XP. New levels bring new seeds, bigger plots and new systems.",

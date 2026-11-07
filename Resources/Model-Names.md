@@ -38,6 +38,8 @@ Baby, Young and Elder creatures use the same model at different sizes. Elders an
 |---|---|
 | `Building_wood_fence` | Gate fence |
 | `Building_reinforced_fence` | Stone/metal gate |
+| `Building_iron_fence` | Iron Gate (Level 20, spiky) |
+| `Building_moon_fence` | Moon Gate (Level 35, magical, glowing) |
 | `Building_lantern` | Lantern post |
 | `Building_trap` | Floor trap |
 | `Building_watchtower` | Watchtower |

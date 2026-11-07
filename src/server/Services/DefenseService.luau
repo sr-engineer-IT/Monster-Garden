@@ -73,8 +73,11 @@ local function actionFor(data: any, slot: Slot): (string?, string?)
 	if defense.Health and record.Health < defense.Health then
 		return "repair", record.Type
 	end
-	if record.Type == "wood_fence" and data.Unlocks.ReinforcedFence then
-		return "reinforce", "reinforced_fence"
+	-- Gates upgrade along a chain: Wooden -> Reinforced -> Iron -> Moon
+	local nextId = defense.Next
+	local nextDefense = nextId and Defenses.ById[nextId]
+	if nextDefense and data.Unlocks[nextDefense.Feature] and data.GardenLevel >= (nextDefense.MinLevel or 0) then
+		return "reinforce", nextId
 	end
 	return nil, nil
 end
@@ -100,16 +103,44 @@ local function buildVisual(player: Player, slot: Slot, record: any?)
 	if slot.Kind == "Gate" then
 		local alongX = slot.Gate == "N" or slot.Gate == "S"
 		local width = Config.World.GateWidth
-		local reinforced = record.Type == "reinforced_fence"
+		local reinforced = record.Type ~= "wood_fence"
 		local thickness = if reinforced then 1.6 else 0.8
+		local looks = {
+			wood_fence = { Color3.fromRGB(160, 110, 60), Enum.Material.WoodPlanks },
+			reinforced_fence = { Color3.fromRGB(130, 130, 140), Enum.Material.Slate },
+			iron_fence = { Color3.fromRGB(95, 100, 115), Enum.Material.DiamondPlate },
+			moon_fence = { Color3.fromRGB(175, 205, 255), Enum.Material.Neon },
+		}
+		local look = looks[record.Type] or looks.wood_fence
 		main = Build.Part({
-			Size = if alongX then Vector3.new(width, 4, thickness) else Vector3.new(thickness, 4, width),
-			Position = p + Vector3.new(0, 2, 0),
-			Color = if reinforced then Color3.fromRGB(130, 130, 140) else Color3.fromRGB(160, 110, 60),
-			Material = if reinforced then Enum.Material.Slate else Enum.Material.WoodPlanks,
+			Size = if alongX then Vector3.new(width, if reinforced then 5 else 4, thickness) else Vector3.new(thickness, if reinforced then 5 else 4, width),
+			Position = p + Vector3.new(0, if reinforced then 2.5 else 2, 0),
+			Color = look[1],
+			Material = look[2],
 			Transparency = fade,
 			Parent = model,
 		})
+		-- A broken gate lies flat on the ground (clear that monsters can walk in)
+		if broken then
+			main.Size = if alongX then Vector3.new(width, 0.5, 4) else Vector3.new(4, 0.5, width)
+			main.Position = p + Vector3.new(0, 0.25, 0)
+			main.Transparency = 0.2
+		end
+		-- Iron Gate: a row of spikes on top. Moon Gate: glows.
+		if not broken and (record.Type == "iron_fence" or record.Type == "moon_fence") then
+			for i = -3, 3 do
+				local along = if alongX then Vector3.new(i * width / 7.5, 0, 0) else Vector3.new(0, 0, i * width / 7.5)
+				Build.Part({ Size = Vector3.new(0.5, 1.4, 0.5), CFrame = CFrame.new(p + along + Vector3.new(0, 5.6, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = if record.Type == "moon_fence" then Color3.fromRGB(230, 240, 255) else Color3.fromRGB(200, 200, 210), Material = Enum.Material.Metal, Transparency = fade, Parent = model })
+			end
+		end
+		local defense = Defenses.ById[record.Type]
+		if defense and defense.Glow and not broken then
+			local light = Instance.new("PointLight")
+			light.Color = defense.Glow
+			light.Range = 22
+			light.Brightness = 1.6
+			light.Parent = main
+		end
 	elseif slot.Kind == "Post" then
 		Build.Part({ Size = Vector3.new(0.5, 7, 0.5), Position = p + Vector3.new(0, 3.5, 0), Color = Color3.fromRGB(50, 45, 40), Transparency = fade, Parent = model })
 		main = Build.Ball({ Size = Vector3.one * 1.8, Position = p + Vector3.new(0, 7.4, 0), Color = if broken then Color3.fromRGB(80, 80, 80) else Color3.fromRGB(255, 220, 120), Material = if broken then Enum.Material.SmoothPlastic else Enum.Material.Neon, Parent = model })
@@ -147,16 +178,23 @@ local function buildVisual(player: Player, slot: Slot, record: any?)
 	end
 	-- Real 3D model (assets/models/Building_<type>.rbxm) replaces the shapes if present
 	local facing = CFrame.new(p)
-	local options: Assets.Options = { Height = if slot.Kind == "Tower" then 16 elseif slot.Kind == "Post" then 8 elseif slot.Kind == "Trap" then 1.2 else 5, Collide = slot.Kind == "Gate" }
+	local options: Assets.Options = { Height = if slot.Kind == "Tower" then 16 elseif slot.Kind == "Post" then 8 elseif slot.Kind == "Trap" then 1.2 else 5, Collide = false }
 	if slot.Kind == "Gate" then
 		local outwardDir = ((Config.World.Gates :: any)[slot.Gate or "N"] :: Vector3).Unit
 		facing = CFrame.lookAt(p, p + outwardDir)
 		-- 7 studs tall, then stretched sideways to fill the whole opening between the gate posts
-		options = { Height = 7, FitWidth = Config.World.GateWidth, Collide = true }
+		-- not solid: players walk through their own gates; monsters are held by the game rules
+		options = { Height = 7, FitWidth = Config.World.GateWidth, Collide = false }
 	end
 	local art = Assets.Replace(model, `Building_{record.Type}`, facing, options)
 	if art and broken then
-		Assets.SetTransparency(art, 0.6)
+		if slot.Kind == "Gate" then
+			-- a broken gate falls flat on the ground, so it is clear monsters can walk in
+			Assets.PlaceModel(art, facing * CFrame.Angles(math.rad(-85), 0, 0))
+			Assets.SetTransparency(art, 0.25)
+		else
+			Assets.SetTransparency(art, 0.6)
+		end
 	end
 	model.Parent = slot.Anchor
 	slot.Model = model
@@ -178,7 +216,7 @@ local function refreshPrompt(data: any, slot: Slot)
 	elseif action == "repair" then
 		Build.SetPrompt(slot.Prompt, "Repair", costText(costOf(defense, Defenses.RepairCostShare)), Defenses.RepairSeconds)
 	else
-		Build.SetPrompt(slot.Prompt, "Reinforce", costText(costOf(defense, 1)), 0.5)
+		Build.SetPrompt(slot.Prompt, `Upgrade: {defense.Name}`, `{costText(costOf(defense, 1))}  •  {defense.Power or ""}`, 0.5)
 	end
 end
 
@@ -217,13 +255,60 @@ local function act(player: Player, slotId: string)
 			return
 		end
 		data.Plot.Buildings[slotId] = { Type = defenseId, Health = defense.Health }
-		notify(player, "Fence reinforced!")
+		notify(player, `{defense.Name} built! {defense.Power or ""}`)
 		S.ObjectiveService.Progress(player, "Build:" .. defenseId)
 	end
 	buildVisual(player, slot, data.Plot.Buildings[slotId])
 	refreshPrompt(data, slot)
 	player:SetAttribute("HasWatchtower", DefenseService.HasBuilding(player, "watchtower"))
 	S.DataService.MarkChanged(player)
+end
+
+-- Studio test command (/sandbox): build every unlocked defense on every slot, free.
+-- Runs twice so fences become reinforced where that is unlocked.
+function DefenseService.TestBuildAll(player: Player): number
+	local data = S.DataService.GetData(player)
+	local list = slots[player]
+	if not data or not list then
+		return 0
+	end
+	local built = 0
+	for _ = 1, 4 do
+		for slotId, slot in list do
+			local action, defenseId = actionFor(data, slot)
+			if action ~= nil and action ~= "repair" and defenseId then
+				local defense = Defenses.ById[defenseId]
+				data.Plot.Buildings[slotId] = { Type = defenseId, Health = defense.Health or 1 }
+				buildVisual(player, slot, data.Plot.Buildings[slotId])
+				refreshPrompt(data, slot)
+				built += 1
+			end
+		end
+	end
+	player:SetAttribute("HasWatchtower", DefenseService.HasBuilding(player, "watchtower"))
+	S.DataService.MarkChanged(player)
+	return built
+end
+
+-- Studio test command (/gates wood | /gates stone): put that gate type on all 4 gates, free
+function DefenseService.TestSetGates(player: Player, defenseId: string): number
+	local data = S.DataService.GetData(player)
+	local list = slots[player]
+	local defense = Defenses.ById[defenseId]
+	if not data or not list or not defense then
+		return 0
+	end
+	local count = 0
+	for slotId, slot in list do
+		if slot.Kind == "Gate" then
+			data.Plot.Buildings[slotId] = { Type = defenseId, Health = defense.Health or 1 }
+			buildVisual(player, slot, data.Plot.Buildings[slotId])
+			refreshPrompt(data, slot)
+			count += 1
+		end
+	end
+	S.DataService.MarkChanged(player)
+	return count
 end
 
 local function createSlots(player: Player, data: any)
@@ -290,6 +375,14 @@ function DefenseService.IsGateBlocked(player: Player, gate: string): boolean
 end
 
 -- Returns true when this hit broke the fence (or there was none)
+-- Spikes: damage per second a gate deals to monsters breaking it (Iron and Moon Gates)
+function DefenseService.GateThorns(player: Player, gate: string): number
+	local data = S.DataService.GetData(player)
+	local record = data and data.Plot.Buildings["gate_" .. gate]
+	local defense = record and record.Health > 0 and Defenses.ById[record.Type]
+	return if defense then defense.Thorns or 0 else 0
+end
+
 function DefenseService.DamageGate(player: Player, gate: string, amount: number): boolean
 	local data = S.DataService.GetData(player)
 	local slotId = "gate_" .. gate
@@ -299,6 +392,7 @@ function DefenseService.DamageGate(player: Player, gate: string, amount: number)
 		return true
 	end
 	local defense = Defenses.ById[record.Type]
+	amount *= defense.DamageTakenMult or 1 -- stronger gates take less damage
 	record.Health = math.max(0, record.Health - amount)
 	if record.Health <= 0 then
 		buildVisual(player, slot, record)

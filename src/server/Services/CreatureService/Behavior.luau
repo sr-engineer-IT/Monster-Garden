@@ -103,7 +103,13 @@ function Behavior.Tick(player: Player, data: any, plot: any, list: { [string]: a
 			local goal: Vector3 = runtime.Position
 			local speed = Config.CreatureMove.Speed * (if creature.Stage == "Baby" then 0.6 else 1)
 
-			if creature.InjuredUntil ~= 0 then
+			if player:GetAttribute("DevFollow") and root then
+				-- Studio /follow: every creature walks after you in rows of 3 (to check which way models face)
+				local row, col = (index - 1) // 3, (index - 1) % 3
+				local back = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+				local side = root.CFrame.RightVector * Vector3.new(1, 0, 1)
+				goal = root.Position - back * (7 + row * 7) + side * ((col - 1) * 7)
+			elseif creature.InjuredUntil ~= 0 then
 				goal = runtime.Position
 			elseif creature.InShelter then
 				goal = plot.Center + Config.World.ShelterSpot + ring * 1.5
@@ -132,6 +138,21 @@ function Behavior.Tick(player: Player, data: any, plot: any, list: { [string]: a
 			if moving then
 				runtime.Facing = flat.Unit
 				position += flat.Unit * math.min(flat.Magnitude - 1, speed * dt)
+			end
+			-- Keep a little space between creatures so they never melt into one blob
+			if not creature.InShelter and not creature.InPen then
+				for otherId, other in list do
+					if otherId ~= id then
+						local away = Vector3.new(position.X - other.Position.X, 0, position.Z - other.Position.Z)
+						-- use the size of what you SEE (3D models are often much longer than the hit box)
+						local need = (runtime.Footprint or runtime.Size * 0.6) + (other.Footprint or other.Size * 0.6) + 0.6
+						local gap = away.Magnitude
+						if gap < need then
+							local push = if gap > 0.05 then away.Unit else Vector3.new(math.cos(index), 0, math.sin(index))
+							position += push * math.min(need - gap, speed * dt) * 0.5
+						end
+					end
+				end
 			end
 			-- Settle back to the ground (hopping is animated smoothly on each player's screen)
 			local targetY = Behavior.GroundY(runtime.Size)

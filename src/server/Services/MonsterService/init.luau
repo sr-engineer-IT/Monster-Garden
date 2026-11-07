@@ -578,6 +578,31 @@ function MonsterService.SpawnGuard(typeId: string, position: Vector3, folder: In
 	return monster
 end
 
+-- Studio test (/attack): during your night, one of every monster type attacks (plus an Elder)
+function MonsterService.TestSpawnAll(player: Player): boolean
+	local garden = gardens[player]
+	if not garden or not garden.Night then
+		return false
+	end
+	for i, typeId in { "swarmer", "brute", "trickster", "stalker" } do
+		spawnNightMonster(player, garden, typeId, GATES[i])
+	end
+	spawnNightMonster(player, garden, "brute", GATES[1], true)
+	updateAliveCount(player)
+	return true
+end
+
+-- Studio test (/parade): a monster that walks in a circle around `center`, harmless
+function MonsterService.SpawnParade(typeId: string, center: Vector3, angle: number, radius: number): any
+	local start = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * radius
+	local monster = create(nil, typeId, { Kind = "Parade", Position = start, Folder = workspace })
+	monster.State = "Parade"
+	monster.Anchor = center
+	monster.Phase = angle
+	monster.Radius = radius
+	return monster
+end
+
 function MonsterService.SpawnAlpha(position: Vector3, health: number, onKilled: (any, Player?) -> ()): any
 	local monster = create(nil, "alpha", { Kind = "Alpha", Position = position, Health = health, Folder = workspace, OnKilled = onKilled })
 	monster.State = "Alpha"

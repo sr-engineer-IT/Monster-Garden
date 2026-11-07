@@ -14,6 +14,7 @@ local Util = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Util
 
 local S = require(script.Parent.Parent.Parent.Registry)
 local Assets = require(script.Parent.Parent.Parent.Assets)
+local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local Rig = require(script.Parent.Parent.Parent.Rig)
 
 local AI = {}
@@ -149,6 +150,8 @@ local function updateNight(m: any, night: any, dt: number, ctx: any)
 			if blocked and m.Ability == "Burrower" and not m.BurrowUsed then
 				m.BurrowUsed = true
 				blocked = false
+				-- tell the owner, so it does not look like a bug
+				Remotes.Get("Notify"):FireClient(owner, { Text = "An Elder Burrower dug UNDER your gate! Elders can do that once." })
 			end
 			m.State = if blocked then "Breach" else "Seek"
 			m.Timer = 0
@@ -157,6 +160,16 @@ local function updateNight(m: any, night: any, dt: number, ctx: any)
 		local damage = m.Damage * (def.FenceDamageMult or 1) * ctx.HowlMult(m) * dt
 		if S.DefenseService.DamageGate(owner, m.Gate, damage) then
 			m.State, m.Timer = "Seek", 0
+		else
+			-- Iron / Moon Gate spikes hurt the monster while it breaks the gate (applied once a second)
+			local thorns = S.DefenseService.GateThorns(owner, m.Gate)
+			if thorns > 0 then
+				m.ThornTimer = (m.ThornTimer or 0) + dt
+				if m.ThornTimer >= 1 then
+					m.ThornTimer -= 1
+					S.MonsterService.DamageMonster(m.Id, thorns, nil)
+				end
+			end
 		end
 	elseif state == "Seek" or state == "Idle" then
 		m.Timer -= dt
@@ -215,6 +228,13 @@ local function updateGuard(m: any, dt: number, clock: number)
 	moveTo(m, m.WanderGoal, m.Speed * 0.3, dt, 0.5)
 end
 
+-- Studio /parade: walk in a slow circle around a point (to check which way monster models face)
+local function updateParade(m: any, dt: number)
+	m.Phase = (m.Phase or 0) + dt * 0.3
+	local goal = m.Anchor + Vector3.new(math.cos(m.Phase), 0, math.sin(m.Phase)) * (m.Radius or 16)
+	moveTo(m, goal, m.Speed * 0.6, dt, 0.3)
+end
+
 local function updateAlpha(m: any, dt: number, ctx: any)
 	local alpha = Monsters.Alpha
 	local plot = m.TargetPlot
@@ -245,7 +265,9 @@ local function updateAlpha(m: any, dt: number, ctx: any)
 end
 
 function AI.Update(m: any, night: any, dt: number, clock: number, ctx: any)
-	if m.Kind == "Guard" then
+	if m.Kind == "Parade" then
+		updateParade(m, dt)
+	elseif m.Kind == "Guard" then
 		updateGuard(m, dt, clock)
 	elseif m.Kind == "Alpha" then
 		updateAlpha(m, dt, ctx)

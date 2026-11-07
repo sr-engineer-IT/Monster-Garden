@@ -24,6 +24,7 @@ export type Runtime = {
 	Model: Model,
 	Body: BasePart,
 	Size: number,
+	Footprint: number?, -- half the width of the visible model, for spacing
 	Position: Vector3,
 	Facing: Vector3,
 	Health: number,
@@ -126,6 +127,7 @@ local function spawnModel(player: Player, creature: any)
 		Model = parts.Model,
 		Body = parts.Body,
 		Size = parts.Size,
+		Footprint = parts.Footprint,
 		Position = Vector3.new(position.X, Behavior.GroundY(parts.Size), position.Z),
 		Facing = Vector3.new(0, 0, -1),
 		Health = maxHealth,

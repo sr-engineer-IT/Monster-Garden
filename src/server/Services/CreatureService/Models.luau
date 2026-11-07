@@ -18,6 +18,7 @@ export type Parts = {
 	Model: Model,
 	Body: BasePart,
 	Size: number,
+	Footprint: number, -- half the width of what you see (model or shapes), for spacing
 	Status: TextLabel,
 	FedBar: Frame,
 	PetPrompt: ProximityPrompt,
@@ -106,6 +107,11 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 
 	-- Real 3D model (assets/models/Creature_<species>.rbxm) replaces the shapes if present
 	local art = Assets.Dress(model, `Creature_{creature.Species}`, body, { Height = size * 1.25, Query = false, AlignLength = true })
+	local footprint = size * 0.6
+	if art then
+		local _, artSize = Assets.Bounds(art)
+		footprint = math.max(artSize.X, artSize.Z) * 0.5
+	end
 	if art then
 		local tint = if shadow then SHADOW_GLOW elseif moonlit then MOONLIT_GLOW else glow
 		if tint then
@@ -139,6 +145,7 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 		Model = model,
 		Body = body,
 		Size = size,
+		Footprint = footprint,
 		Status = status,
 		FedBar = fedBar,
 		PetPrompt = petPrompt,
