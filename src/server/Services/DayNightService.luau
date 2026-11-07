@@ -14,6 +14,7 @@ local Humor = require(ConfigFolder:WaitForChild("Humor"))
 local Creatures = require(ConfigFolder:WaitForChild("Creatures"))
 local Stages = require(ConfigFolder:WaitForChild("Stages"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameMath"))
 
 local S = require(script.Parent.Parent.Registry)
 
@@ -63,7 +64,7 @@ local function resolveNight(player: Player, data: any)
 
 	-- Nights pay more than harvests (section 22.2)
 	local xp = Config.XPSources.SurviveNightBase + Config.XPSources.SurviveNightPerMonster * stats.Repelled
-	local coins = Config.NightReward.CoinsBase + Config.NightReward.CoinsPerLevel * data.GardenLevel
+	local coins = math.floor((Config.NightReward.CoinsBase + Config.NightReward.CoinsPerLevel * data.GardenLevel) * GameMath.RebirthNightRewardMult(data.Rebirths))
 	data.Coins += coins
 
 	-- Unlock stage 2 before mutation rolls so night 1 gives the guaranteed first Moonlit glow

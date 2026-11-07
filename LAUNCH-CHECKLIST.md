@@ -7,7 +7,7 @@ Do these in order. When one is done, change `[ ]` to `[x]`.
 ### 1. Test (15 minutes)
 Close the place without saving → run `build-place.bat` → open `MonsterGarden.rbxlx` → press **Play**.
 
-- [ ] Type `/test` in chat. Output says **11 passed**.
+- [ ] Type `/test` in chat. Output says **11 passed** (all tests, 0 failed).
 - [ ] You hear music. Harvest = pop sound. Sell = coin sound.
 - [ ] Crops look like real plants (carrot patch, corn, tomatoes...) and grow in 3 steps. Watering splashes, harvesting sparkles.
 - [ ] Type `/night`. Monsters come. Attack works.
@@ -48,4 +48,4 @@ Go to **create.roblox.com** → **Creations** → **Moonlit Grove**.
 ### 5. After launch
 - [ ] Play the live game on your PC and your phone.
 - [ ] Press **F9 → Server**. If you see red text, send it to Claude.
-- [ ] Every day: create.roblox.com → Moonlit Grove → **Analytics**. Check how many players come back.
+- [ ] Every day: open **UPDATES.md** and do the daily check (players, errors, feedback).

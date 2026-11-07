@@ -56,6 +56,8 @@ Quests.Rebirth = {
 	CoinBonus = 0.15, -- +15% coins per rebirth
 	XPBonus = 0.10, -- +10% Garden XP per rebirth
 	MaxBonusRebirths = 20, -- bonuses stop growing after this many (the count keeps going)
+	NightDifficulty = 0.25, -- +25% monsters per rebirth, so the game never becomes too easy
+	NightRewardBonus = 0.25, -- +25% night coins per rebirth (on top of the coin bonus)
 }
 
 return Quests

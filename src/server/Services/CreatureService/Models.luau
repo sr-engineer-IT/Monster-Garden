@@ -91,7 +91,19 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	end
 
 	local glow = cosmeticColor(equippedGlow) or (if moonlit then MOONLIT_GLOW elseif shadow then SHADOW_GLOW else nil)
-	if has(creature.Mutations, "StarTouched") or has(creature.Mutations, "HungerBlessed") then
+	if has(creature.Mutations, "Eclipse") then
+		-- super-rare: dark purple-gold glow with sparkles
+		glow = Color3.fromRGB(180, 90, 255)
+		local sparkles = Instance.new("Sparkles")
+		sparkles.SparkleColor = Color3.fromRGB(255, 210, 90)
+		sparkles.Parent = body
+	elseif has(creature.Mutations, "Celestial") then
+		-- super-rare: bright white-gold glow with sparkles
+		glow = Color3.fromRGB(255, 250, 210)
+		local sparkles = Instance.new("Sparkles")
+		sparkles.SparkleColor = Color3.fromRGB(255, 255, 255)
+		sparkles.Parent = body
+	elseif has(creature.Mutations, "StarTouched") or has(creature.Mutations, "HungerBlessed") then
 		glow = Color3.fromRGB(255, 230, 120)
 		local sparkles = Instance.new("Sparkles")
 		sparkles.SparkleColor = glow

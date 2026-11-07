@@ -40,6 +40,8 @@ test("Rebirth bonuses and quest sizes", function(check)
 	check(math.abs(GameMath.RebirthCoinMult(2) - 1.3) < 1e-9, `2 rebirths = +30% coins ({GameMath.RebirthCoinMult(2)})`)
 	check(math.abs(GameMath.RebirthXPMult(1) - 1.1) < 1e-9, `1 rebirth = +10% XP ({GameMath.RebirthXPMult(1)})`)
 	check(GameMath.RebirthCoinMult(500) == GameMath.RebirthCoinMult(20), "bonus stops growing after 20 rebirths")
+	check(math.abs(GameMath.RebirthDifficulty(2) - 1.5) < 1e-9, `2 rebirths = nights 50% harder ({GameMath.RebirthDifficulty(2)})`)
+	check(GameMath.RebirthDifficulty(nil) == 1, "no rebirth = normal nights")
 	local harvest = { Base = 15, PerLevel = 0.8 }
 	check(GameMath.QuestCount(harvest, 1) == 15, `harvest quest at L1 = {GameMath.QuestCount(harvest, 1)}`)
 	check(GameMath.QuestCount(harvest, 40) == 47, `harvest quest at L40 = {GameMath.QuestCount(harvest, 40)}`)

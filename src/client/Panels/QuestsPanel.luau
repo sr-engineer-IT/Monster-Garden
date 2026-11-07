@@ -163,10 +163,11 @@ function QuestsPanel.Open()
 	Kit.Heading(list, `{Kit.Icons.Rebirth} Rebirth`, nextOrder())
 	local nextCoin = math.floor((GameMath.RebirthCoinMult(rebirths + 1) - 1) * 100 + 0.5)
 	local nextXP = math.floor((GameMath.RebirthXPMult(rebirths + 1) - 1) * 100 + 0.5)
-	local info = Kit.Row(list, nextOrder(), 150)
+	local info = Kit.Row(list, nextOrder(), 170)
 	local lines = {
 		if rebirths > 0 then `You have reborn {rebirths} time(s). Current bonus: +{math.floor((GameMath.RebirthCoinMult(rebirths) - 1) * 100 + 0.5)}% coins, +{math.floor((GameMath.RebirthXPMult(rebirths) - 1) * 100 + 0.5)}% XP.` else "Start your garden again, stronger!",
 		`Next rebirth: +{nextCoin}% coins and +{nextXP}% Garden XP forever, plus the Reborn title.`,
+		"Warning: each rebirth also makes nights 25% harder (more monsters), with 25% bigger night rewards.",
 		"You keep: creatures, Essence, unlocked features, buildings, cosmetics, passes and Season.",
 		"You reset: Garden Level, coins, plot size, soil, crops and seeds.",
 	}

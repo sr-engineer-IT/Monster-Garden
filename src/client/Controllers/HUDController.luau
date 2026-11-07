@@ -658,7 +658,12 @@ function HUDController.Start()
 		if payload.Special then
 			-- first Moonlit glow: the big "wow" moment after the first night
 			task.delay(1.2, function()
-				HUDController.Celebrate(`✨ LUCKY! ✨`, `{payload.Creature} is now {string.upper(payload.Mutation)}!`, `A {payload.Rarity} glow from the moon. Glowing creatures and crops are worth more. Defend every night to find rarer glows!`)
+				if payload.Rarity == "Mythic" then
+					-- super-rare glow (Celestial 1 in 5,000, Eclipse 1 in 50,000)
+					HUDController.Celebrate(`🌟 INCREDIBLE! 🌟`, `{payload.Creature} is now {string.upper(payload.Mutation)}!`, `{payload.Reason}. Almost nobody has this. The whole server just heard about it!`)
+				else
+					HUDController.Celebrate(`✨ LUCKY! ✨`, `{payload.Creature} is now {string.upper(payload.Mutation)}!`, `A {payload.Rarity} glow from the moon. Glowing creatures and crops are worth more. Defend every night to find rarer glows!`)
+				end
 			end)
 		else
 			HUDController.ShowBanner(`{payload.Creature} earned {payload.Mutation}!`, `{payload.Rarity} mutation - {payload.Reason}`)

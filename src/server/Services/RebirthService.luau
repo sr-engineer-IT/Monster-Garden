@@ -54,7 +54,7 @@ local function onRebirth(player: Player, data: any)
 	local xpBonus = math.floor((GameMath.RebirthXPMult(data.Rebirths) - 1) * 100 + 0.5)
 	Remotes.Get("UnlockBanner"):FireClient(player, {
 		Title = `Reborn! (x{data.Rebirths})`,
-		Text = `Permanent bonus: +{coinBonus}% coins and +{xpBonus}% Garden XP. Your creatures came with you!`,
+		Text = `Permanent bonus: +{coinBonus}% coins and +{xpBonus}% Garden XP. Nights are now harder, and pay more. Your creatures came with you!`,
 		Kind = "Rebirth",
 	})
 end

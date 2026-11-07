@@ -29,6 +29,7 @@ export type Mutation = {
 	NearbyDamageReduction: number?,
 	TraitEffectBonus: number?,
 	EnduranceBonus: number?,
+	SuperRare: boolean?, -- big celebration + the whole server hears about it
 }
 
 local Mutations = {}
@@ -46,6 +47,9 @@ Mutations.List = {
 	{ Id = "Escaped", Name = "Escaped", Rarity = "Rare", Stage = 7, BaseChance = 1.0, Reason = "Rescued from a monster nest", EnduranceBonus = 5 },
 	{ Id = "Shadow", Name = "Shadow", Rarity = "Rare", Stage = 9, BaseChance = 1.0, Reason = "Stayed in the Heist Pen all night unstolen", SellMult = 1.1 },
 	{ Id = "HungerBlessed", Name = "Hunger-Blessed", Rarity = "Mythic", Stage = 9, BaseChance = 0.10, Reason = "Helped defeat Feast Night", HealthBonus = 0.10, DamageBonus = 0.10 },
+	-- Super-rare glows to chase for months (any surviving creature, every night)
+	{ Id = "Celestial", Name = "Celestial", Rarity = "Mythic", Stage = 2, BaseChance = 1 / 5000, Reason = "Touched by a falling star (1 in 5,000!)", SellMult = 3, HealthBonus = 0.15, DamageBonus = 0.15, SuperRare = true },
+	{ Id = "Eclipse", Name = "Eclipse", Rarity = "Mythic", Stage = 4, BaseChance = 1 / 50000, Reason = "Born under a moon eclipse (1 in 50,000!!)", SellMult = 5, HealthBonus = 0.25, DamageBonus = 0.25, SuperRare = true },
 } :: { Mutation }
 
 Mutations.ById = {} :: { [string]: Mutation }

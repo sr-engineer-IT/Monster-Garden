@@ -254,7 +254,7 @@ function GameMath.WaveBudget(data: any, hungerValue: number?): number
 		ease = night.EaseAfterTwoFails
 	end
 	local hungerMult = if hungerValue then 1 + hungerValue / night.HungerDivisor else 1
-	local budget = (night.BudgetBase + night.BudgetPerLevel * data.GardenLevel) * stageDifficulty * hungerMult * shield * ease
+	local budget = (night.BudgetBase + night.BudgetPerLevel * data.GardenLevel) * stageDifficulty * hungerMult * shield * ease * GameMath.RebirthDifficulty(data.Rebirths)
 	if data.Unlocks and data.Unlocks.Explore then
 		budget += (data.NestPopulation or 0) * Config.NestPopulation.BudgetPerMonster
 	end
@@ -327,6 +327,17 @@ function GameMath.DailyPuzzle(kind: string, day: number, userId: number): number
 		return rng:NextInteger(1, #PuzzlesConfig.OddOneOut)
 	end
 	return rng:NextInteger(1, 1000000)
+end
+
+-- Harder nights after each rebirth (more monsters), and bigger night rewards
+function GameMath.RebirthDifficulty(rebirths: number?): number
+	local n = math.min(rebirths or 0, QuestsConfig.Rebirth.MaxBonusRebirths)
+	return 1 + n * QuestsConfig.Rebirth.NightDifficulty
+end
+
+function GameMath.RebirthNightRewardMult(rebirths: number?): number
+	local n = math.min(rebirths or 0, QuestsConfig.Rebirth.MaxBonusRebirths)
+	return (1 + n * QuestsConfig.Rebirth.NightRewardBonus) * GameMath.RebirthCoinMult(rebirths)
 end
 
 -- Quest goal size for a player's level

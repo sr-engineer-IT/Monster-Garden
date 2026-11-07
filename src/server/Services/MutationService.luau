@@ -112,7 +112,13 @@ function MutationService.Grant(player: Player, creatureId: string, mutationId: s
 	end
 	data.Stats.Mutations = (data.Stats.Mutations or 0) + 1
 	local name = GameMath.CreatureName(creature)
-	Remotes.Get("MutationEarned"):FireClient(player, { Creature = name, Mutation = mutation.Name, Rarity = mutation.Rarity, Reason = reason or mutation.Reason, Special = firstGlow })
+	Remotes.Get("MutationEarned"):FireClient(player, { Creature = name, Mutation = mutation.Name, Rarity = mutation.Rarity, Reason = reason or mutation.Reason, Special = firstGlow or mutation.SuperRare == true })
+	if mutation.SuperRare then
+		-- the whole server hears about it (bragging rights!)
+		for _, other in game:GetService("Players"):GetPlayers() do
+			Remotes.Get("Notify"):FireClient(other, { Text = `✨ {player.DisplayName}'s {name} just turned {string.upper(mutation.Name)}! ({mutation.Reason})`, Kind = "Goal" })
+		end
+	end
 	S.CreatureService.RefreshLook(player, creatureId)
 	S.DataService.MarkChanged(player)
 	return true
@@ -130,10 +136,9 @@ function MutationService.RollNightEnd(player: Player): { string }
 	for id, creature in data.Creatures do
 		if not creature.CaptiveAt then
 			for _, mutation in Mutations.List do
-				if #creature.Mutations >= Mutations.MaxPerCreature then
-					break
-				end
-				if eligible(data, creature, mutation, hungerLevel) and Util.Chance(chanceFor(data, creature, mutation, hungerLevel, companion)) then
+				-- full creatures can still win a super-rare glow (it replaces the most common one)
+				local full = #creature.Mutations >= Mutations.MaxPerCreature
+				if (not full or mutation.SuperRare) and eligible(data, creature, mutation, hungerLevel) and Util.Chance(chanceFor(data, creature, mutation, hungerLevel, companion)) then
 					if MutationService.Grant(player, id, mutation.Id) then
 						table.insert(lines, `{GameMath.CreatureName(creature)} earned {mutation.Name}! ({mutation.Reason})`)
 					end
