@@ -116,7 +116,7 @@ Stages.List = {
 } :: { Stage }
 
 -- Stage 1 special case: the first night starts this many seconds after first spawn
-Stages.FirstNightAfterSpawnSeconds = 210
+Stages.FirstNightAfterSpawnSeconds = 120 -- first night after 2 minutes: show what makes the game special early (was 210)
 
 -- Veteran skip (section 4.3)
 Stages.VeteranSkip = {

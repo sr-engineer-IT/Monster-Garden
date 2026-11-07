@@ -18,7 +18,7 @@ forest regions and UI are all built by code, so there is nothing to place by han
 
 | Stage | Unlocks at | What is in it |
 |---|---|---|
-| 1 Seeds | start | Plant, water, harvest, sell; starter rabbit Bun; first night after 3.5 min |
+| 1 Seeds | start | Plant, water, harvest, sell; starter rabbit Bun; first night after 2 min |
 | 2 Defense | night 1 | Fences, lanterns, Essence, Moon Petals, Moonlit mutation, friend visits, chicken egg gift |
 | 3 Growth | Level 5 | Bigger plots, soil upgrades, creature eggs, Farmer/Producer jobs, traps, reinforced fences, Brutes, rare restock |
 | 4 Family | Level 10 + 2 adults | Traits, nests, breeding, babies, life stages, rare powers, training mini-game, naming |
