@@ -498,7 +498,7 @@ local function onData(newData: any)
 	menuButtons.Ranks.Visible = data.Unlocks.Leaderboards == true
 	setBadge("Season", seasonClaimable())
 	setBadge("Store", data.Inventory.Items.crate or 0)
-	setBadge("Quests", panels("QuestsPanel").Claimable(data))
+	setBadge("Quests", panels("QuestsPanel").Claimable(data) + panels("PuzzlePanel").Remaining(data))
 
 	local parts = {}
 	for _, crop in Crops.List do

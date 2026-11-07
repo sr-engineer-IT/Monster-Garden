@@ -55,6 +55,7 @@ local DefaultProfile: Types.ProfileData = {
 	Equipped = {},
 	Quests = { Day = 0, Daily = {}, Week = 0, Weekly = {}, BonusClaimed = false }, -- daily / weekly quests
 	Rebirths = 0,
+	Puzzles = { Day = 0, Done = {}, BonusClaimed = false }, -- daily puzzles
 }
 
 return DefaultProfile

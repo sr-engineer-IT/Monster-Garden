@@ -14,6 +14,8 @@ Close the place without saving → run `build-place.bat` → open `MonsterGarden
 - [ ] Creatures hop when they walk and breathe when they stand. Pet one: it does a happy jump.
 - [ ] Monsters waddle when they walk. Hit one: it shakes and flashes white.
 - [ ] Open **Quests**. Claim works.
+- [ ] Quests → **Daily Puzzles**: solve the riddle, odd one out and memory game. Coins go up each time.
+- [ ] Funny lines: "Moon News" card when you join (second join), monster speech bubbles at night, creature bubbles when you pet them, a joke at the end of the night report.
 - [ ] New player (`/resetdata`, Stop, Play): survive the first night. A big "LUCKY!" screen with confetti shows Bun turning Moonlit, and one crop glows.
 - [ ] Open **Store**. Prices show (no "Soon").
 - [ ] No **red** text in Output. (Yellow text is OK.)

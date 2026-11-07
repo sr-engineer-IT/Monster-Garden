@@ -40,6 +40,9 @@ Remotes.ClientToServer = {
 	"OpenStall", -- ownerUserId
 	"QuestClaim", -- kind ("Daily" | "Weekly" | "Bonus"), index
 	"Rebirth", -- none: rebirth now (server checks the level)
+	"PuzzleBegin", -- kind: a memory game started (for the time check)
+	"PuzzleSolve", -- kind, answer
+	"OpenPuzzles", -- server -> client: open the Daily Puzzles panel
 	"BuyShopItem", -- ownerUserId, listingId
 	"TradeRequest", -- userId
 	"TradeRespond", -- accept bool

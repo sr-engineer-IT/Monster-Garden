@@ -52,6 +52,7 @@ local BOOT_ORDER = {
 	"ExploreService",
 	"QuestService",
 	"RebirthService",
+	"PuzzleService",
 }
 
 Remotes.Setup()

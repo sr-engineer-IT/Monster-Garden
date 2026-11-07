@@ -18,6 +18,7 @@ function Models.Build(lookId: string, name: string, id: string, elder: boolean, 
 	local model = Instance.new("Model")
 	model.Name = if elder then "Elder " .. name else name
 	model:SetAttribute("MonsterId", id)
+	model:SetAttribute("Look", lookId) -- which funny lines its speech bubbles use
 	local body = Build.Ball({ Name = "Body", Size = Vector3.one * size, Position = Vector3.zero, Color = bodyColor, CanQuery = true, Parent = model })
 	for _, side in { -1, 1 } do
 		Build.Ball({ Size = Vector3.one * size * 0.28, Position = Vector3.new(side * size * 0.2, size * 0.15, -size * 0.38), Color = look.Eyes, Material = Enum.Material.Neon, CanQuery = true, Parent = model })

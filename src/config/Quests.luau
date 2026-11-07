@@ -31,6 +31,7 @@ Quests.Daily = {
 	{ Id = "care", Text = "Pet or feed creatures {n} times", Event = "Care", Base = 6, PerLevel = 0.1, MinStage = 1 },
 	{ Id = "petals", Text = "Collect {n} Moon Petals", Event = "Petal", Base = 3, PerLevel = 0.05, MinStage = 2 },
 	{ Id = "visit", Text = "Visit {n} friend gardens", Event = "Visit", Base = 1, PerLevel = 0, MinStage = 5 },
+	{ Id = "puzzle", Text = "Solve {n} Daily Puzzles", Event = "Puzzle", Base = 2, PerLevel = 0, MinStage = 1 },
 } :: { Quest }
 
 Quests.Weekly = {

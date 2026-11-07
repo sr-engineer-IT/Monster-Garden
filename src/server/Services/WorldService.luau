@@ -388,6 +388,11 @@ local function buildTown()
 		Build.Part({ Size = Vector3.new(0.8, 11, 0.8), CFrame = facing * CFrame.new(x, 5.5, 0.4), Color = Color3.fromRGB(105, 74, 48), Parent = town })
 	end
 	local face = Build.Part({ Size = Vector3.new(13, 8, 0.1), CFrame = facing * CFrame.new(0, 6, -0.36), Color = Color3.fromRGB(240, 228, 200), Material = Enum.Material.Fabric, Parent = town })
+	-- Daily Puzzles: press E at the notice board
+	local puzzlePrompt = Build.Prompt(face, "Daily Puzzles", "Notice Board", { Distance = 14 })
+	puzzlePrompt.Triggered:Connect(function(player)
+		S.PuzzleService.Open(player)
+	end)
 	local surface = Instance.new("SurfaceGui")
 	surface.Face = Enum.NormalId.Front
 	surface.PixelsPerStud = 40
@@ -398,7 +403,7 @@ local function buildTown()
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.fromRGB(80, 55, 35)
-	text.Text = "GROW BY DAY.\nDEFEND BY NIGHT.\n\nSell crops at any shop.\nVisit friends and trade.\nThe moon grows hungry..."
+	text.Text = "GROW BY DAY.\nDEFEND BY NIGHT.\n\n🧩 DAILY PUZZLES HERE!\nPress E to play.\nThe moon grows hungry..."
 	text.Parent = surface
 	Instance.new("UIPadding", text).PaddingLeft = UDim.new(0, 20)
 	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 30, 30), CFrame = CFrame.new(boardAt + Vector3.new(0, 0.22, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(196, 186, 165), Material = Enum.Material.Cobblestone, Parent = town })

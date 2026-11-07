@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
+local Humor = require(ConfigFolder:WaitForChild("Humor"))
 local Creatures = require(ConfigFolder:WaitForChild("Creatures"))
 local Stages = require(ConfigFolder:WaitForChild("Stages"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
@@ -89,6 +90,8 @@ local function resolveNight(player: Player, data: any)
 	if stats.CreaturesLost and stats.CreaturesLost > 0 then
 		table.insert(lines, "A creature was taken tonight. Shelters keep creatures safe.")
 	end
+	-- a funny line to end the report (config/Humor.luau)
+	table.insert(lines, "😄 " .. Humor.NightQuips[math.random(1, #Humor.NightQuips)])
 
 	-- Later-stage systems
 	S.LifecycleService.OnNightSurvived(player)

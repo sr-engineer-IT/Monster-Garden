@@ -314,6 +314,21 @@ function GameMath.RebirthXPMult(rebirths: number?): number
 	return 1 + n * QuestsConfig.Rebirth.XPBonus
 end
 
+-- Daily Puzzles: which puzzle a player gets today (same on server and client).
+-- Riddle / OddOneOut: an index into the list. Memory: a seed for shuffling the cards.
+local PuzzlesConfig = require(ConfigFolder:WaitForChild("Puzzles"))
+
+function GameMath.DailyPuzzle(kind: string, day: number, userId: number): number
+	local salt = if kind == "Riddle" then 11 elseif kind == "OddOneOut" then 23 else 37
+	local rng = Random.new(day * 1009 + userId % 100003 * 7 + salt)
+	if kind == "Riddle" then
+		return rng:NextInteger(1, #PuzzlesConfig.Riddles)
+	elseif kind == "OddOneOut" then
+		return rng:NextInteger(1, #PuzzlesConfig.OddOneOut)
+	end
+	return rng:NextInteger(1, 1000000)
+end
+
 -- Quest goal size for a player's level
 function GameMath.QuestCount(quest: any, level: number): number
 	return math.max(1, math.floor(quest.Base + level * quest.PerLevel))

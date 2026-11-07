@@ -45,7 +45,7 @@ local function rewardText(reward: any, data: any): string
 		table.insert(parts, `{Kit.Icons.Season} {reward.SeasonXP} XP`)
 	end
 	if reward.Crates then
-		table.insert(parts, `🎁 {reward.Crates} crate`)
+		table.insert(parts, `ð {reward.Crates} crate`)
 	end
 	return table.concat(parts, "   ")
 end
@@ -140,6 +140,12 @@ function QuestsPanel.Open()
 			end
 		end, 112)
 	end
+
+	-- Daily Puzzles (optional)
+	local puzzlesLeft = require(script.Parent:WaitForChild("PuzzlePanel")).Remaining(data)
+	Kit.Button({ Text = if puzzlesLeft > 0 then `🧩 Daily Puzzles ({3 - puzzlesLeft}/3 solved)` else "🧩 Daily Puzzles: all solved!", TextSize = 18, Size = UDim2.new(1, 0, 0, 52), BackgroundColor3 = if puzzlesLeft > 0 then C.Premium else C.Locked, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list }, function()
+		require(script.Parent:WaitForChild("PuzzlePanel")).Open()
+	end)
 
 	-- Weekly
 	Kit.Heading(list, "Weekly quest", nextOrder())

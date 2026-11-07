@@ -147,6 +147,7 @@ export type ProfileData = {
 	Equipped: { Glow: string?, Theme: string?, Title: string? },
 	Quests: { Day: number, Daily: { any }, Week: number, Weekly: { any }, BonusClaimed: boolean },
 	Rebirths: number,
+	Puzzles: { Day: number, Done: { [string]: boolean }, BonusClaimed: boolean },
 }
 
 return {}
