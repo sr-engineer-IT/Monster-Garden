@@ -151,6 +151,15 @@ test("Fresh time: grow time x 3, between 2 and 30 minutes", function(check)
 	check(GameMath.OverripeCoins("carrot#Moonlit", 0) == 12, `overripe Moonlit carrot = {GameMath.OverripeCoins("carrot#Moonlit", 0)} (half of 24)`)
 end)
 
+test("Login streak and friend bonus", function(check)
+	check(GameMath.NextLoginStreak(3, 99, 100) == 4, "logged in yesterday = streak +1")
+	check(GameMath.NextLoginStreak(3, 97, 100) == 1, "missed a day = back to 1")
+	check(GameMath.NextLoginStreak(0, 0, 100) == 1, "first login = 1")
+	check(GameMath.StreakCycleDay(7) == 7 and GameMath.StreakCycleDay(8) == 1 and GameMath.StreakCycleDay(15) == 1, "7-day cycle")
+	check(near(GameMath.FriendBoostMult(0), 1) and near(GameMath.FriendBoostMult(2), 1.2), "+10% per friend")
+	check(near(GameMath.FriendBoostMult(5), 1.3), "friend bonus max +30%")
+end)
+
 return function(): Result
 	local result: Result = { Passed = 0, Failed = {} }
 	for _, entry in tests do

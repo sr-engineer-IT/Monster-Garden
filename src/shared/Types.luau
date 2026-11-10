@@ -134,6 +134,7 @@ export type ProfileData = {
 		DailyCaps: { [string]: DailyCap },
 	},
 	LastLoginDay: number,
+	LoginStreak: number,
 	LastSeen: number,
 	PlaySeconds: number, -- total online play time; aging and gestation use this
 	ObjectiveIndex: number,

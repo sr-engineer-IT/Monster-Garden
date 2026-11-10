@@ -40,6 +40,7 @@ local DefaultProfile: Types.ProfileData = {
 	HeistFlag = false,
 	Purchases = { Ids = {}, PassesOwned = {}, DailyCaps = {} },
 	LastLoginDay = 0,
+	LoginStreak = 0, -- days in a row (Config.LoginStreak)
 	LastSeen = 0,
 	PlaySeconds = 0,
 	ObjectiveIndex = 1,

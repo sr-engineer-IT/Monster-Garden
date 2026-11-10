@@ -30,6 +30,17 @@ Config.DailyLoginGift = {
 	BaseCoins = 50,
 	LevelDivisor = 10, -- gift = BaseCoins * (1 + GardenLevel / LevelDivisor)
 }
+-- Login streak: the daily gift grows each day in a row, over a 7-day cycle. Missing a day starts
+-- again at Day 1. Day 7 also gives a cosmetic crate (opened from the Store).
+Config.LoginStreak = {
+	CoinMult = { 1, 1.5, 2, 2.5, 3, 3.5, 5 }, -- x the daily gift, by day of the cycle
+	Essence = { [3] = 10, [5] = 25 },
+	CrateOnDay = 7,
+}
+
+-- Friend bonus: +10% coins on selling for each friend playing in the same server (max +30%)
+Config.FriendBoost = { PerFriend = 0.10, Max = 0.30 }
+
 Config.EssenceRerollCost = 50 -- guaranteed mutation re-roll, once per creature per day
 Config.NightIncomeShare = 0.30 -- surviving a night pays ~30% of average day income
 

@@ -317,6 +317,22 @@ end
 -- Rebirth bonuses (see config/Quests.luau). Used by the server and shown in the Rebirth panel.
 local QuestsConfig = require(ConfigFolder:WaitForChild("Quests"))
 
+-- Login streak: new streak after logging in today (lastDay = day of the previous login)
+function GameMath.NextLoginStreak(streak: number, lastDay: number, today: number): number
+	return if lastDay == today - 1 then streak + 1 else 1
+end
+
+-- Day of the 7-day streak cycle (1-7) for a streak count
+function GameMath.StreakCycleDay(streak: number): number
+	return (math.max(streak, 1) - 1) % #Config.LoginStreak.CoinMult + 1
+end
+
+-- Friend bonus multiplier on selling, for this many friends in the server
+function GameMath.FriendBoostMult(friends: number): number
+	local boost = Config.FriendBoost
+	return 1 + math.min(boost.Max, friends * boost.PerFriend)
+end
+
 function GameMath.RebirthCoinMult(rebirths: number?): number
 	local n = math.min(rebirths or 0, QuestsConfig.Rebirth.MaxBonusRebirths)
 	return 1 + n * QuestsConfig.Rebirth.CoinBonus

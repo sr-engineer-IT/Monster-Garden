@@ -30,6 +30,23 @@ Tick a box by changing `[ ]` to `[x]`. Add your own ideas at the bottom.
 
 ---
 
+## Quick wins: more players and more players coming back (do these first)
+More players = Roblox shows the game to more people = more Robux. These are small and work best right after launch.
+
+- [x] **Login streak**: the daily gift grows for 7 days in a row, Day 7 gives a crate.
+- [x] **Friend bonus**: +10% coins on selling for each friend in your server (max +30%).
+- [ ] **Badges** 🏅: "Welcome", "First Night", "First Moonlit", "Level 10", "First Rebirth". Players love badges and they show on their profile, so their friends see your game. Create them on the website (Engagement → Badges), then ask Claude to award them.
+- [ ] **Codes** 🎟️: a "Codes" box in the menu. Post codes on your Discord/YouTube/TikTok (`LAUNCH` = 500 coins). Very popular on Roblox and brings players back.
+- [ ] **Group reward** 👥: make a Roblox group; members get a "Grove Member" title and +10% Essence. Group members get your update news.
+- [ ] **Like and favorite reminder** 👍: after a player's 3rd night, one small friendly message: "Enjoying Moonlit Grove? Tap 👍 and ⭐ to help!" (only once, never again).
+- [ ] **Experience Notifications** 🔔: Roblox lets games send "Your crops are ready!" notifications to players who opted in. Brings players back.
+- [ ] **Invite reward**: when a friend you invited joins for the first time, you both get a crate.
+- [ ] **Weekend event** 🎉: "Double Moonlit Weekend" every Saturday-Sunday (one number in Config). Players learn to come back on weekends.
+- [ ] **Limited-time offer**: a cosmetic sold only this week (Halloween hat, winter glow). Makes players buy now instead of "later".
+- [ ] **Overripe tuning**: after a week, read the comments. If players hate Overripe, raise `Config.Spoil.FreshMult`. If nobody notices it, lower it.
+
+---
+
 ## Big ideas (in a good order)
 
 ### 1. Collection Book 📖 (first update, recommended)

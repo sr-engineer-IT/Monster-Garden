@@ -2,6 +2,7 @@
 -- EconomyService: Coins and Monster Essence, the merchant cart (buy seeds, eggs, plot and soil
 -- upgrades; sell goods) and the daily login gift (Build Spec section 6).
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
@@ -23,6 +24,48 @@ local EconomyService = {}
 
 local function notify(player: Player, text: string)
 	Remotes.Get("Notify"):FireClient(player, { Text = text })
+end
+
+-- Friend bonus ---------------------------------------------------------------------------------
+-- Friendships are looked up once when someone joins (IsFriendsWith is a web call) and cached
+-- per pair of players in this server.
+local friendPairs: { [string]: boolean } = {}
+
+local function pairKey(a: number, b: number): string
+	return if a < b then `{a}:{b}` else `{b}:{a}`
+end
+
+function EconomyService.FriendsHere(player: Player): number
+	local count = 0
+	for _, other in Players:GetPlayers() do
+		if other ~= player and friendPairs[pairKey(player.UserId, other.UserId)] then
+			count += 1
+		end
+	end
+	return count
+end
+
+local function lookUpFriends(newcomer: Player)
+	for _, other in Players:GetPlayers() do
+		if other ~= newcomer then
+			local ok, isFriend = pcall(newcomer.IsFriendsWith, newcomer, other.UserId)
+			if ok and isFriend and newcomer.Parent and other.Parent then
+				friendPairs[pairKey(newcomer.UserId, other.UserId)] = true
+				local function tell(player: Player, friend: Player)
+					local pct = math.round((GameMath.FriendBoostMult(EconomyService.FriendsHere(player)) - 1) * 100)
+					notify(player, `Your friend {friend.DisplayName} is here! Friend bonus: +{pct}% coins when you sell.`)
+				end
+				tell(newcomer, other)
+				tell(other, newcomer)
+			end
+		end
+	end
+end
+
+local function forgetFriends(leaving: Player)
+	for _, other in Players:GetPlayers() do
+		friendPairs[pairKey(leaving.UserId, other.UserId)] = nil
+	end
 end
 
 -- Currency -----------------------------------------------------------------------------------
@@ -348,9 +391,12 @@ local function onSellItems(player: Player, data: any)
 	end
 	-- Rebirth bonus: +15% coins per rebirth
 	total = math.floor(total * GameMath.RebirthCoinMult(data.Rebirths))
+	-- Friend bonus: +10% per friend in this server (max +30%)
+	local friends = EconomyService.FriendsHere(player)
+	total = math.floor(total * GameMath.FriendBoostMult(friends))
 	table.clear(data.Inventory.Goods)
 	data.Coins += total
-	notify(player, `Sold for {total} coins!`)
+	notify(player, if friends > 0 then `Sold for {total} coins! (friend bonus +{math.round((GameMath.FriendBoostMult(friends) - 1) * 100)}%)` else `Sold for {total} coins!`)
 	S.ProgressionService.AddXP(player, total // Config.XPSources.CoinsPerSellXP, "Sell")
 	S.ObjectiveService.Progress(player, "Sell", sold)
 	S.DataService.MarkChanged(player)
@@ -362,14 +408,37 @@ local function giveDailyGift(player: Player, data: any)
 	if data.LastLoginDay == today then
 		return
 	end
+	-- Login streak: days in a row; the gift grows over a 7-day cycle (Config.LoginStreak)
+	data.LoginStreak = GameMath.NextLoginStreak(data.LoginStreak or 0, data.LastLoginDay, today)
 	data.LastLoginDay = today
+	local streak = Config.LoginStreak
+	local day = GameMath.StreakCycleDay(data.LoginStreak)
 	local gift = Config.DailyLoginGift
-	local coins = math.min(math.floor(gift.BaseCoins * (1 + data.GardenLevel / gift.LevelDivisor)), Config.MaxDailyLoginGiftCoins)
+	local base = math.min(math.floor(gift.BaseCoins * (1 + data.GardenLevel / gift.LevelDivisor)), Config.MaxDailyLoginGiftCoins)
+	local coins = math.floor(base * streak.CoinMult[day])
 	data.Coins += coins
+	local parts = { `+{coins} coins` }
+	local essence = streak.Essence[day]
+	if essence then
+		data.Essence += essence
+		table.insert(parts, `+{essence} Essence`)
+	end
+	if day == streak.CrateOnDay then
+		data.Inventory.Items.crate = (data.Inventory.Items.crate or 0) + 1
+		table.insert(parts, "a cosmetic crate (open it in the Store)")
+	end
 	S.DataService.MarkChanged(player)
+	local nextDay = GameMath.StreakCycleDay(data.LoginStreak + 1)
+	local tomorrow = if nextDay == streak.CrateOnDay then "a crate" else `x{streak.CoinMult[nextDay]} coins`
 	task.delay(4, function()
-		if player.Parent then
-			notify(player, `Daily gift: +{coins} coins!`)
+		if not player.Parent then
+			return
+		end
+		local text = `{table.concat(parts, ", ")}. Come back tomorrow for {tomorrow}!`
+		if data.LoginStreak == 1 then
+			notify(player, `Daily gift: {text}`) -- small toast on Day 1 (new players see the guide)
+		else
+			Remotes.Get("UnlockBanner"):FireClient(player, { Title = `🔥 Day {data.LoginStreak} login streak!`, Text = text })
 		end
 	end)
 end
@@ -387,6 +456,13 @@ function EconomyService.Start()
 	S.AntiExploit.Bind("BuyItem", onBuyItem)
 	S.AntiExploit.Bind("SellItems", onSellItems)
 	S.DataService.ProfileLoaded:Connect(giveDailyGift)
+	Players.PlayerAdded:Connect(function(player)
+		task.spawn(lookUpFriends, player)
+	end)
+	for _, player in Players:GetPlayers() do
+		task.spawn(lookUpFriends, player)
+	end
+	Players.PlayerRemoving:Connect(forgetFriends)
 end
 
 return EconomyService
