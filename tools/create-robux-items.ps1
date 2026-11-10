@@ -1,4 +1,4 @@
-# Creates all Robux items (9 Game Passes + 9 Developer Products) for Moonlit Grove through the
+# Creates all Robux items (9 Game Passes + 11 Developer Products) for Moonlit Grove through the
 # official Roblox Open Cloud API, then writes their IDs into src/config/Products.luau.
 #
 # Before running:
@@ -57,7 +57,9 @@ $items = @(
 	@{ Id = "dp_coin_s";        Kind = "product"; Name = "Small Coin Pack";     Price = 49;  Desc = "Coins worth about 12 minutes of play" },
 	@{ Id = "dp_coin_m";        Kind = "product"; Name = "Medium Coin Pack";    Price = 99;  Desc = "Coins worth about 30 minutes of play" },
 	@{ Id = "dp_coin_l";        Kind = "product"; Name = "Large Coin Pack";     Price = 149; Desc = "Coins worth about 1 hour of play" },
-	@{ Id = "dp_tierskip";      Kind = "product"; Name = "Season Tier Skip";    Price = 49;  Desc = "Skip one tier of the Moon Season" }
+	@{ Id = "dp_tierskip";      Kind = "product"; Name = "Season Tier Skip";    Price = 49;  Desc = "Skip one tier of the Moon Season" },
+	@{ Id = "dp_starter";       Kind = "product"; Name = "Starter Pack";        Price = 99;  Desc = "One time only: 1 hour of coins, 3 cosmetic crates, a Growth Boost, a Rename Token and the Early Bird title" },
+	@{ Id = "dp_support";       Kind = "product"; Name = "Support the Developer"; Price = 49; Desc = "Supporter title. Thank you for helping Moonlit Grove grow!" }
 )
 
 # Results from earlier runs (so nothing is created twice)

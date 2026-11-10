@@ -169,14 +169,37 @@ end
 -- Studio test command (/pass <id>): turn a pass on without buying it
 function MonetizationService.TestGrantPass(player: Player, passId: string): boolean
 	local data = S.DataService.GetData(player)
-	if not data or not RunService:IsStudio() or Products.PassById[passId] == nil then
+	if not data or not RunService:IsStudio() then
+		return false
+	end
+	if passId == "premium" then
+		-- Pretend to be a Roblox Premium member until the next join
+		data.Purchases.PassesOwned.premium = true
+		data.Titles[Products.Premium.Title] = true
+		S.DataService.MarkChanged(player)
+		return true
+	end
+	if Products.PassById[passId] == nil then
 		return false
 	end
 	applyPass(player, data, passId)
 	return true
 end
 
+-- Roblox Premium: checked on every join and when membership changes (the bonus ends with the
+-- membership; the title is kept, like the Club title)
+local function applyPremium(player: Player, data: any): boolean
+	local premium = player.MembershipType == Enum.MembershipType.Premium
+	data.Purchases.PassesOwned.premium = premium or nil
+	if premium then
+		data.Titles[Products.Premium.Title] = true
+	end
+	S.DataService.MarkChanged(player)
+	return premium
+end
+
 local function checkOwnership(player: Player, data: any)
+	applyPremium(player, data)
 	for _, pass in Products.Passes do
 		-- In Studio the creator (who owns every pass automatically) plays like a new player;
 		-- passes bought in Studio (free test purchases) still apply
@@ -232,11 +255,28 @@ local function grantProduct(player: Player, data: any, product: Products.Product
 		data.Coins += GameMath.CoinPackAmount(Products.CoinPackMinutes[id], data.GardenLevel)
 	elseif id == "dp_tierskip" then
 		S.SeasonService.AddXP(player, Config.Season.XPPerTier)
+	elseif id == "dp_starter" then
+		-- Granted even if somehow bought twice: a paid receipt must always be granted
+		local pack = Products.StarterPack
+		data.Coins += GameMath.CoinPackAmount(pack.CoinMinutes, data.GardenLevel)
+		data.Inventory.Items.rename = (data.Inventory.Items.rename or 0) + pack.RenameTokens
+		if pack.GrowthBoost then
+			data.Boosts.GrowthUntil = math.max(data.Boosts.GrowthUntil, os.time()) + Products.GrowthBoost.DurationSeconds
+		end
+		data.Titles[pack.Title] = true
+		for _ = 1, pack.Crates do
+			openCrate(player, data)
+		end
+	elseif id == "dp_support" then
+		data.Titles.Supporter = true
+	end
+	if product.Once then
+		data.Purchases.PassesOwned[id] = true
 	end
 	bumpCap(data, id)
 	bumpCap(data, "all")
 	if capCount(data, "all") >= Products.SpendingReminderAfterPurchases then
-		notify(player, "You've made several purchases today. Remember: everything in the game can be earned by playing!")
+		notify(player, "You've made several purchases today. Remember: you can play the whole game for free!")
 	end
 	notify(player, `Thanks! {product.Name} received.`)
 end
@@ -306,6 +346,14 @@ local function onPurchaseRequest(player: Player, data: any, id: any)
 		end)
 		return
 	end
+	if id == "premium" then
+		if player.MembershipType == Enum.MembershipType.Premium then
+			notify(player, "You already have Roblox Premium. Your bonus is active!")
+			return
+		end
+		pcall(MarketplaceService.PromptPremiumPurchase, MarketplaceService, player)
+		return
+	end
 	local pass = Products.PassById[id]
 	local product = Products.ProductById[id]
 	local item = pass or product
@@ -331,6 +379,10 @@ local function onPurchaseRequest(player: Player, data: any, id: any)
 		end
 		MarketplaceService:PromptGamePassPurchase(player, pass.AssetId)
 	elseif product then
+		if product.Once and data.Purchases.PassesOwned[product.Id] then
+			notify(player, `You already got the {product.Name}.`)
+			return
+		end
 		if product.DailyCap and capCount(data, product.Id) >= product.DailyCap then
 			notify(player, `Daily limit reached for {product.Name}. Come back tomorrow!`)
 			return
@@ -363,6 +415,13 @@ function MonetizationService.Start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		restricted[player] = nil
+	end)
+	-- Someone buys Roblox Premium while playing: the bonus starts right away
+	Players.PlayerMembershipChanged:Connect(function(player)
+		local data = S.DataService.GetData(player)
+		if data and applyPremium(player, data) then
+			notify(player, `Welcome to Premium! You get {Products.Premium.Effect}.`)
+		end
 	end)
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, assetId, purchased)
 		local data = S.DataService.GetData(player)

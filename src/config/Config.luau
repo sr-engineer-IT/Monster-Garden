@@ -299,6 +299,7 @@ Config.Inventory = {
 	InventoryPassBonus = 100, -- pass_inventory ("+20 slots" in the spec)
 	FounderBonus = 50,
 	ClubBonus = 30,
+	PremiumBonus = 30, -- Roblox Premium members
 }
 
 -- Scout role and watchtower warn earlier and show the monsters' direction

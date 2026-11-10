@@ -21,7 +21,56 @@ local PanelController = require(Client:WaitForChild("Controllers"):WaitForChild(
 
 local C = Kit.Colors
 
+local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
+
 local StorePanel = {}
+
+-- Live prices: asked from Roblox for this player (so a price changed on the Creator Dashboard,
+-- or a regional price, shows correctly). Until the answer comes, the price in Products is shown.
+local livePrices: { [string]: number } = {}
+
+local function price(item: any): number
+	return livePrices[item.Id] or item.Price
+end
+
+local function fetchPrices()
+	local function fetch(item: any, infoType: Enum.InfoType)
+		if item.AssetId == 0 then
+			return
+		end
+		local ok, info = pcall(MarketplaceService.GetProductInfo, MarketplaceService, item.AssetId, infoType)
+		if ok and type(info) == "table" and type(info.PriceInRobux) == "number" then
+			livePrices[item.Id] = info.PriceInRobux
+			if RunService:IsStudio() and info.PriceInRobux ~= item.Price then
+				warn(`[Store] {item.Name}: Roblox price is R$ {info.PriceInRobux}, Products.luau says R$ {item.Price}. The store shows the Roblox price; update Products.luau to match.`)
+			end
+		end
+		task.wait(0.2)
+	end
+	for _, pass in Products.Passes do
+		fetch(pass, Enum.InfoType.GamePass)
+	end
+	for _, product in Products.DevProducts do
+		fetch(product, Enum.InfoType.Product)
+	end
+end
+
+local starterProduct = Products.ProductById.dp_starter
+local supportProduct = Products.ProductById.dp_support
+
+-- The Starter Pack card shows at the top of the store until it is bought
+local function starterOffered(data: any): boolean
+	return starterProduct ~= nil
+		and starterProduct.AssetId ~= 0
+		and data.Stage >= starterProduct.OfferedFromStage
+		and not data.Purchases.PassesOwned[starterProduct.Id]
+end
+
+-- Number on the Store menu button: crates to open, plus 1 while the Starter Pack is on offer
+function StorePanel.Badge(data: any): number
+	return (data.Inventory.Items.crate or 0) + (if starterOffered(data) then 1 else 0)
+end
 
 local function itemRow(list: Instance, order: number, name: string, info: string, buttonText: string, enabled: boolean, onClick: () -> ())
 	local row = Kit.Row(list, order, 68)
@@ -49,10 +98,21 @@ function StorePanel.Open()
 		order += 1
 		return order
 	end
-	Kit.Label({ Text = "Everything in the game can be earned by playing. The store sells looks and time-savers only.", TextSize = 14, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
+	Kit.Label({ Text = "You can play the whole game for free. The store sells looks and time-savers.", TextSize = 14, TextColor3 = C.Muted, AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 
 	-- Players in countries where paid random items are not allowed see no crates or odds
 	local noRandom = Players.LocalPlayer:GetAttribute("NoPaidRandom") == true
+
+	-- Starter Pack: best value, one time only
+	if starterOffered(data) then
+		local pack = Products.StarterPack
+		Kit.Heading(list, "⭐ Starter Pack: one time only", nextOrder())
+		local crates = if noRandom then `{pack.Crates} cosmetics` else `{pack.Crates} cosmetic crates`
+		local info = `+{Util.FormatNumber(GameMath.CoinPackAmount(pack.CoinMinutes, data.GardenLevel))} coins, {crates}, 30 min Growth Boost, Rename Token, "{pack.Title}" title`
+		itemRow(list, nextOrder(), `Starter Pack  (best value)`, info, `R$ {price(starterProduct)}`, true, function()
+			Remotes.Get("PurchaseRequest"):FireServer(starterProduct.Id)
+		end)
+	end
 	if (data.Inventory.Items.crate or 0) > 0 then
 		local info = if noRandom then "Gives the next cosmetic you don't have yet" else "Earned from the Moon Season"
 		itemRow(list, nextOrder(), `Open a crate ({data.Inventory.Items.crate} left)`, info, "Open", true, function()
@@ -71,7 +131,7 @@ function StorePanel.Open()
 			local used = if cap and cap.Day == today then cap.Count else 0
 			local left = (product.DailyCap or 99) - used
 			local soon = product.AssetId == 0
-			local text = if soon then "Soon" elseif left <= 0 then "Tomorrow" else `R$ {product.Price}`
+			local text = if soon then "Soon" elseif left <= 0 then "Tomorrow" else `R$ {price(product)}`
 			local info = if left <= 0 then "Daily limit reached, come back tomorrow" else `{left} left today · grows with your level`
 			itemRow(list, nextOrder(), `+{Util.FormatNumber(amount)} coins  ({product.Name})`, info, text, not soon and left > 0, function()
 				Remotes.Get("PurchaseRequest"):FireServer(product.Id)
@@ -84,7 +144,7 @@ function StorePanel.Open()
 		local owned = data.Purchases.PassesOwned[pass.Id] == true
 		local soon = pass.AssetId == 0
 		local locked = data.Stage < pass.OfferedFromStage
-		local text = if owned then "Owned" elseif soon then "Soon" elseif locked then "Locked" else `R$ {pass.Price}`
+		local text = if owned then "Owned" elseif soon then "Soon" elseif locked then "Locked" else `R$ {price(pass)}`
 		itemRow(list, nextOrder(), pass.Name, pass.Effect, text, not owned and not soon and not locked, function()
 			Remotes.Get("PurchaseRequest"):FireServer(pass.Id)
 		end)
@@ -94,11 +154,12 @@ function StorePanel.Open()
 	for _, product in Products.DevProducts do
 		local crate = product.Id == "dp_crate1" or product.Id == "dp_crate10"
 		local coinPack = (Products.CoinPackMinutes :: any)[product.Id] ~= nil -- shown in Coins above
-		if not (crate and noRandom) and not coinPack then
+		local ownSpot = product == starterProduct or product == supportProduct -- shown at the top / bottom
+		if not (crate and noRandom) and not coinPack and not ownSpot then
 			local soon = product.AssetId == 0
 			local locked = data.Stage < product.OfferedFromStage
 			local cap = if product.DailyCap then ` (max {product.DailyCap} per day)` else ""
-			local text = if soon then "Soon" elseif locked then "Locked" else `R$ {product.Price}`
+			local text = if soon then "Soon" elseif locked then "Locked" else `R$ {price(product)}`
 			itemRow(list, nextOrder(), product.Name, product.Effect .. cap, text, not soon and not locked, function()
 				Remotes.Get("PurchaseRequest"):FireServer(product.Id)
 			end)
@@ -120,6 +181,22 @@ function StorePanel.Open()
 		Kit.Heading(list, Products.Club.Name, nextOrder())
 		itemRow(list, nextOrder(), Products.Club.Name, Products.Club.Effect, if club then "Member" else Products.Club.PriceText, not club, function()
 			Remotes.Get("PurchaseRequest"):FireServer("club")
+		end)
+	end
+
+	-- Roblox Premium: members get a bonus here; others can open Roblox's own Premium offer
+	Kit.Heading(list, `{Kit.Icons.Crown} Roblox Premium`, nextOrder())
+	local premium = Players.LocalPlayer.MembershipType == Enum.MembershipType.Premium
+	itemRow(list, nextOrder(), if premium then "Premium bonus active" else "Roblox Premium bonus", Products.Premium.Effect, if premium then "Active" else "Get", not premium, function()
+		Remotes.Get("PurchaseRequest"):FireServer("premium")
+	end)
+
+	-- Support the developer (can be bought any number of times)
+	if supportProduct and supportProduct.AssetId ~= 0 then
+		Kit.Heading(list, "❤ Support", nextOrder())
+		local supporter = data.Titles.Supporter == true
+		itemRow(list, nextOrder(), supportProduct.Name, if supporter then "Thank you, Supporter! You can tip again any time." else supportProduct.Effect, `R$ {price(supportProduct)}`, true, function()
+			Remotes.Get("PurchaseRequest"):FireServer(supportProduct.Id)
 		end)
 	end
 end
@@ -216,7 +293,7 @@ function StorePanel.OpenSeason()
 		Kit.Chip({ Text = `{Kit.Icons.Crown} Premium active`, TextSize = 16, Size = half, BackgroundColor3 = C.Premium, ZIndex = 23, Parent = strip })
 	else
 		local soon = seasonPass == nil or seasonPass.AssetId == 0
-		Kit.Button({ Text = if soon then `{Kit.Icons.Crown} Premium soon` else `{Kit.Icons.Crown} Premium  R$ {seasonPass.Price}`, TextSize = 16, Size = half, BackgroundColor3 = if soon then C.Locked else C.Premium, ZIndex = 23, Parent = strip }, function()
+		Kit.Button({ Text = if soon then `{Kit.Icons.Crown} Premium soon` else `{Kit.Icons.Crown} Premium  R$ {price(seasonPass)}`, TextSize = 16, Size = half, BackgroundColor3 = if soon then C.Locked else C.Premium, ZIndex = 23, Parent = strip }, function()
 			if not soon then
 				Remotes.Get("PurchaseRequest"):FireServer("pass_season")
 			end
@@ -329,6 +406,14 @@ function StorePanel.OpenStyle()
 end
 
 function StorePanel.Start()
+	task.spawn(function()
+		fetchPrices()
+		PanelController.Refresh("Store", StorePanel.Open)
+		PanelController.Refresh("Season", StorePanel.OpenSeason)
+	end)
+	Players.LocalPlayer:GetPropertyChangedSignal("MembershipType"):Connect(function()
+		PanelController.Refresh("Store", StorePanel.Open)
+	end)
 	local last = 0
 	DataController.Changed:Connect(function()
 		if os.clock() - last < 1 then

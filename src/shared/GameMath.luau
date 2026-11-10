@@ -106,6 +106,7 @@ function GameMath.InventoryCapacity(data: any): number
 		+ (if passes.pass_inventory then inv.InventoryPassBonus else 0)
 		+ (if passes.pass_founder then inv.FounderBonus else 0)
 		+ (if passes.club then inv.ClubBonus else 0)
+		+ (if passes.premium then inv.PremiumBonus else 0)
 end
 
 function GameMath.GoodsCount(data: any): number

@@ -157,7 +157,7 @@ local function harvest(player: Player, data: any, tileId: string, record: any, a
 	end
 	if GameMath.GoodsCount(data) >= GameMath.InventoryCapacity(data) then
 		if not auto then
-			notify(player, "Your bag is full! Sell at the merchant cart.")
+			notify(player, if data.Purchases.PassesOwned.pass_inventory then "Your bag is full! Sell at the merchant cart." else "Your bag is full! Sell at the merchant cart, or get Bigger Inventory (+100) in the Store.")
 		end
 		return false
 	end

@@ -132,6 +132,17 @@ test("Sell values", function(check)
 	check(GameMath.SellValue("unknown") == 0, "unknown goods are worth nothing")
 end)
 
+test("Bag space: base plus pass, Founder, Club and Premium bonuses", function(check)
+	local inv = Config.Inventory
+	local function capacity(passes: { [string]: boolean }): number
+		return GameMath.InventoryCapacity({ Purchases = { PassesOwned = passes } })
+	end
+	check(capacity({}) == inv.BaseCapacity, `no passes = {capacity({})}`)
+	check(capacity({ premium = true }) == inv.BaseCapacity + inv.PremiumBonus, `premium = {capacity({ premium = true })}`)
+	local all = capacity({ pass_inventory = true, pass_founder = true, club = true, premium = true })
+	check(all == inv.BaseCapacity + inv.InventoryPassBonus + inv.FounderBonus + inv.ClubBonus + inv.PremiumBonus, `all = {all}`)
+end)
+
 return function(): Result
 	local result: Result = { Passed = 0, Failed = {} }
 	for _, entry in tests do

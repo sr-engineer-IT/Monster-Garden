@@ -183,7 +183,7 @@ local function handle(player: Player, message: string)
 		if S.MonetizationService.TestGrantPass(player, arg) then
 			print(`[Dev] {arg} is now on for {player.Name}`)
 		else
-			print("[Dev] Pass ids: pass_plot, pass_nest, pass_inventory, pass_autoharvest, pass_founder, pass_shoptheme, pass_grovetheme, pass_vipflair, pass_season")
+			print("[Dev] Pass ids: pass_plot, pass_nest, pass_inventory, pass_autoharvest, pass_founder, pass_shoptheme, pass_grovetheme, pass_vipflair, pass_season, premium (Roblox Premium bonus)")
 		end
 	elseif command == "sandbox" then
 		sandbox(player, data)

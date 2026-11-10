@@ -19,6 +19,7 @@ export type Product = {
 	OfferedFromStage: number,
 	Price: number,
 	DailyCap: number?, -- nil = no cap
+	Once: boolean?, -- true = each player can buy it only once (Starter Pack)
 	Effect: string,
 }
 
@@ -55,6 +56,9 @@ Products.DevProducts = {
 	{ Id = "dp_coin_m", Name = "Medium Coin Pack", AssetId = 3728676264, OfferedFromStage = 1, Price = 99, DailyCap = 2, Effect = "Coins worth about 30 minutes of play at your level" },
 	{ Id = "dp_coin_l", Name = "Large Coin Pack", AssetId = 3728676301, OfferedFromStage = 1, Price = 149, DailyCap = 1, Effect = "Coins worth about 1 hour of play at your level" },
 	{ Id = "dp_tierskip", Name = "Season Tier Skip", AssetId = 3728676341, OfferedFromStage = 3, Price = 49, Effect = "Skip one tier of the Moon Season" },
+	-- These two have their own spots in the store (top and bottom) and stay hidden while AssetId = 0
+	{ Id = "dp_starter", Name = "Starter Pack", AssetId = 0, OfferedFromStage = 2, Price = 99, Once = true, Effect = "One time only: 1 hour of coins, 3 crates, a Growth Boost, a Rename Token and the Early Bird title" },
+	{ Id = "dp_support", Name = "Support the Developer", AssetId = 0, OfferedFromStage = 1, Price = 49, Effect = "Supporter title. Thank you for helping Moonlit Grove grow!" },
 } :: { Product }
 
 Products.PassById = {} :: { [string]: Pass }
@@ -78,6 +82,22 @@ Products.Club = {
 	PriceText = "R$ 199 / month",
 	Effect = "Club title, daily gift of 1 cosmetic crate, +30 bag space",
 	DailyCrates = 1,
+}
+
+-- Starter Pack contents (dp_starter, one per player). Worth about R$ 370 if bought item by item.
+Products.StarterPack = {
+	CoinMinutes = 60, -- same as a Large Coin Pack
+	Crates = 3, -- open as fixed items where paid random items are not allowed
+	RenameTokens = 1,
+	GrowthBoost = true, -- 30 minutes (Products.GrowthBoost)
+	Title = "Early Bird",
+}
+
+-- Roblox Premium members get a small bonus here, and Roblox pays the game for their play time
+-- (Premium Payouts, automatic). Other players can open Roblox's Premium offer from the store.
+Products.Premium = {
+	Title = "Premium",
+	Effect = "+30 bag space and a Premium title in Moonlit Grove",
 }
 
 -- Cosmetic crate pool (odds shown before purchase)

@@ -7,7 +7,7 @@ Do these in order. When one is done, change `[ ]` to `[x]`.
 ### 1. Test (15 minutes)
 Close the place without saving → run `build-place.bat` → open `MonsterGarden.rbxlx` → press **Play**.
 
-- [ ] Type `/test` in chat. Output says **11 passed** (all tests, 0 failed).
+- [ ] Type `/test` in chat. Output says **12 passed** (all tests, 0 failed).
 - [ ] You hear music. Harvest = pop sound. Sell = coin sound.
 - [ ] Crops look like real plants (carrot patch, corn, tomatoes...) and grow in 3 steps. Watering splashes, harvesting sparkles.
 - [ ] Type `/night`. Monsters come. Attack works.
@@ -37,6 +37,22 @@ Go to **create.roblox.com** → **Creations** → **Moonlit Grove**.
 - [ ] Same page → **Description**: copy and paste the text from `Resources\Description.txt`
 - [ ] **Monetization → Passes** → there are exactly **9** passes
 - [ ] **Open Cloud → API Keys** → delete the key. Delete the file `.roblox-api-key.txt`.
+
+---
+
+### 3b. Money settings 💰 (10 minutes)
+**New Robux items** (Starter Pack and Support stay hidden in the store until you do this):
+- [ ] create.roblox.com → Moonlit Grove → **Monetization → Developer Products → Create**:
+  - **Starter Pack**, price **99**, description: `One time only: 1 hour of coins, 3 cosmetic crates, a Growth Boost, a Rename Token and the Early Bird title`
+  - **Support the Developer**, price **49**, description: `Supporter title. Thank you for helping Moonlit Grove grow!`
+- [ ] Copy each new product's **ID** into `src\config\Products.luau` (replace `AssetId = 0` on the `dp_starter` and `dp_support` lines). Or run `tools\create-robux-items.ps1` again with a new API key (it skips items that already exist).
+- [ ] Rebuild, Play, open **Store**: the Starter Pack is at the top (after the first night), Support at the bottom.
+
+**Settings that earn with no code:**
+- [ ] **Monetization → Private Servers**: turn on, price **100 Robux/month**. Friends love a garden server of their own.
+- [ ] **Monetization → Immersive Ads** (and **Rewarded Video Ads** if your account has them): turn on.
+- [ ] Nothing to do for **Premium Payouts**: Roblox pays you for the time Premium members play. The game now gives them +30 bag space and shows non-members a "Get Premium" button in the Store.
+- [ ] In Studio, Output may show yellow `[Store] ... Roblox price is R$ X` lines. That means a price on the website differs from `Products.luau`. The store already shows the website price; update `Products.luau` to match.
 
 ---
 

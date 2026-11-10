@@ -497,7 +497,7 @@ local function onData(newData: any)
 	menuButtons.Friends.Visible = data.Unlocks.FriendVisit == true
 	menuButtons.Ranks.Visible = data.Unlocks.Leaderboards == true
 	setBadge("Season", seasonClaimable())
-	setBadge("Store", data.Inventory.Items.crate or 0)
+	setBadge("Store", panels("StorePanel").Badge(data))
 	setBadge("Quests", panels("QuestsPanel").Claimable(data) + panels("PuzzlePanel").Remaining(data))
 
 	local parts = {}
