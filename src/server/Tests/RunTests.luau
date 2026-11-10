@@ -143,6 +143,14 @@ test("Bag space: base plus pass, Founder, Club and Premium bonuses", function(ch
 	check(all == inv.BaseCapacity + inv.InventoryPassBonus + inv.FounderBonus + inv.ClubBonus + inv.PremiumBonus, `all = {all}`)
 end)
 
+test("Fresh time: grow time x 3, between 2 and 30 minutes", function(check)
+	check(GameMath.FreshSeconds({ GrowSeconds = 20 }) == 120, `carrot = {GameMath.FreshSeconds({ GrowSeconds = 20 })} (min 120)`)
+	check(GameMath.FreshSeconds({ GrowSeconds = 300 }) == 900, `pumpkin = {GameMath.FreshSeconds({ GrowSeconds = 300 })}`)
+	check(GameMath.FreshSeconds({ GrowSeconds = 900 }) == 1800, `starfruit = {GameMath.FreshSeconds({ GrowSeconds = 900 })} (max 1800)`)
+	check(GameMath.OverripeCoins("carrot", 0) == 8, `overripe carrot = {GameMath.OverripeCoins("carrot", 0)} (half of 16)`)
+	check(GameMath.OverripeCoins("carrot#Moonlit", 0) == 12, `overripe Moonlit carrot = {GameMath.OverripeCoins("carrot#Moonlit", 0)} (half of 24)`)
+end)
+
 return function(): Result
 	local result: Result = { Passed = 0, Failed = {} }
 	for _, entry in tests do

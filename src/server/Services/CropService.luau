@@ -47,7 +47,12 @@ local function seedFor(player: Player, data: any): string?
 	return nil
 end
 
-local function buildVisual(tile: BasePart, crop: Crops.Crop, stage: number, moonlit: boolean)
+-- Spoiling is on for this player (Config.Spoil)
+local function spoilOn(data: any): boolean
+	return Config.Spoil.Enabled and data.Stage >= Config.Spoil.FromStage
+end
+
+local function buildVisual(tile: BasePart, crop: Crops.Crop, stage: number, moonlit: boolean, overripe: boolean?)
 	local old = tile:FindFirstChild("Crop")
 	if old then
 		old:Destroy()
@@ -55,7 +60,10 @@ local function buildVisual(tile: BasePart, crop: Crops.Crop, stage: number, moon
 	if stage == 0 then
 		return
 	end
-	CropArt.Build(tile, crop, stage, moonlit) -- blocky crop looks, see CropArt.luau
+	local model = CropArt.Build(tile, crop, stage, moonlit) -- blocky crop looks, see CropArt.luau
+	if overripe then
+		CropArt.Overripe(model)
+	end
 end
 
 local function refreshTile(player: Player, data: any, tileId: string, now: number)
@@ -86,10 +94,18 @@ local function refreshTile(player: Player, data: any, tileId: string, now: numbe
 		moonlit = isMoonlit(record)
 		local progress = GameMath.CropProgress(record, data.Plot.SoilLevel, now)
 		local name = if moonlit then "Moonlit " .. crop.Name else crop.Name
-		if progress >= 1 then
+		if record.Overripe then
 			stage = 3
 			if prompt then
-				Build.SetPrompt(prompt, "Harvest", name)
+				Build.SetPrompt(prompt, "Harvest", `Overripe {name} - half price`)
+			end
+		elseif progress >= 1 then
+			stage = 3
+			if prompt then
+				local fresh = GameMath.FreshSeconds(crop)
+				local left = math.ceil(fresh - (record.RipeFor or 0))
+				local soon = spoilOn(data) and left <= fresh * Config.Spoil.WarnShare
+				Build.SetPrompt(prompt, "Harvest", if soon then `{name} - overripe in {left}s!` else name)
 			end
 		else
 			stage = if progress < 0.4 then 1 else 2
@@ -110,11 +126,12 @@ local function refreshTile(player: Player, data: any, tileId: string, now: numbe
 		keys = {}
 		visualKeys[player] = keys
 	end
-	local key = `{if record then record.Type else ""}:{stage}:{moonlit}`
+	local overripe = record ~= nil and record.Overripe == true
+	local key = `{if record then record.Type else ""}:{stage}:{moonlit}:{overripe}`
 	if keys[tileId] ~= key then
 		keys[tileId] = key
 		if crop or stage == 0 then
-			buildVisual(tile, crop or Crops.List[1], stage, moonlit)
+			buildVisual(tile, crop or Crops.List[1], stage, moonlit, overripe)
 		end
 	end
 end
@@ -155,7 +172,9 @@ local function harvest(player: Player, data: any, tileId: string, record: any, a
 		S.AntiExploit.Flag(player, "HarvestSpam")
 		return false
 	end
-	if GameMath.GoodsCount(data) >= GameMath.InventoryCapacity(data) then
+	local overripe = record.Overripe == true
+	-- Overripe crops pay coins at once instead of going in the bag, so a full bag doesn't block them
+	if not overripe and GameMath.GoodsCount(data) >= GameMath.InventoryCapacity(data) then
 		if not auto then
 			notify(player, if data.Purchases.PassesOwned.pass_inventory then "Your bag is full! Sell at the merchant cart." else "Your bag is full! Sell at the merchant cart, or get Bigger Inventory (+100) in the Store.")
 		end
@@ -163,17 +182,25 @@ local function harvest(player: Player, data: any, tileId: string, record: any, a
 	end
 	local crop = Crops.ById[record.Type]
 	local key = GameMath.CropGoodsKey(crop.Id, isMoonlit(record))
-	data.Inventory.Goods[key] = (data.Inventory.Goods[key] or 0) + 1
+	local coins = 0
+	if overripe then
+		coins = GameMath.OverripeCoins(key, data.Rebirths)
+		S.EconomyService.AddCoins(player, coins)
+	else
+		data.Inventory.Goods[key] = (data.Inventory.Goods[key] or 0) + 1
+	end
 
 	record.HarvestsLeft -= 1
 	if record.HarvestsLeft > 0 then
 		record.PlantedAt = os.time() -- regrow
 		record.WaterTaps = 0
+		record.RipeFor = nil
+		record.Overripe = nil
 	else
 		data.Crops[tileId] = nil
 	end
 	if not auto then
-		notify(player, `+1 {GameMath.GoodsName(key)}`)
+		notify(player, if overripe then `Overripe {GameMath.GoodsName(key)}: +{coins} coins (half price). Harvest sooner for full price!` else `+1 {GameMath.GoodsName(key)}`)
 	end
 	S.ProgressionService.AddXP(player, crop.XP, "Harvest")
 	S.ObjectiveService.Progress(player, "Harvest")
@@ -355,6 +382,24 @@ function CropService.Start()
 							if GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
 								CropService.AutoHarvest(player, tileId)
 							end
+						end
+					end
+					-- Ripe crops turn Overripe (day only, owner online: this loop only runs for players here)
+					if spoilOn(data) and S.DayNightService.GetPhase(player) == "Day" then
+						local turned = 0
+						for _, record in data.Crops do
+							local crop = Crops.ById[record.Type]
+							if crop and not record.Overripe and GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
+								record.RipeFor = (record.RipeFor or 0) + dt
+								if record.RipeFor >= GameMath.FreshSeconds(crop) then
+									record.Overripe = true
+									turned += 1
+								end
+							end
+						end
+						if turned > 0 then
+							notify(player, `{turned} crop(s) got overripe and now sell for half price. Harvest sooner, or let a Farmer creature help!`)
+							S.DataService.MarkChanged(player)
 						end
 					end
 					for tileId in plot.TileParts do

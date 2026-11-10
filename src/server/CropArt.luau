@@ -259,6 +259,27 @@ function CropArt.Build(tile: BasePart, crop: any, stage: number, moonlit: boolea
 end
 
 -- Short burst of particles at a tile (water splash, harvest pop). Server-side, replicates.
+-- Overripe crop: browner, a bit dull, no sparkle (a Moonlit glow stays)
+local OVERRIPE = Color3.fromRGB(120, 86, 50)
+function CropArt.Overripe(model: Model)
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = OVERRIPE
+	highlight.FillTransparency = 0.55
+	highlight.OutlineTransparency = 1
+	for _, item in model:GetDescendants() do
+		if item:IsA("BasePart") then
+			item.Color = item.Color:Lerp(OVERRIPE, 0.45)
+		elseif item:IsA("ParticleEmitter") then
+			item:Destroy()
+		end
+	end
+	if not model:FindFirstChildWhichIsA("Highlight", true) then
+		highlight.Parent = model -- also tints real 3D crop models whose texture hides Color
+	else
+		highlight:Destroy()
+	end
+end
+
 function CropArt.Burst(tile: BasePart, kind: string)
 	local attachment = Instance.new("Attachment")
 	attachment.Position = Vector3.new(0, tile.Size.Y / 2 + 0.6, 0)

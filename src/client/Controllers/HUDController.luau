@@ -515,11 +515,14 @@ local function hint(now: number): string
 	if not data then
 		return ""
 	end
-	local ready, planted, soonest, soonestName = 0, 0, math.huge, nil
+	local ready, overripe, planted, soonest, soonestName = 0, 0, 0, math.huge, nil
 	for _, record in data.Crops do
 		planted += 1
 		local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now)
 		local crop = Crops.ById[record.Type]
+		if record.Overripe then
+			overripe += 1
+		end
 		if left <= 0 then
 			ready += 1
 		elseif left < soonest and crop then
@@ -537,8 +540,10 @@ local function hint(now: number): string
 
 	if bagFull then
 		return "Bag full! Sell at the merchant cart."
+	elseif overripe > 0 then
+		return `{overripe} crop(s) overripe (half price). Walk up and {use} to harvest them now!`
 	elseif ready > 0 then
-		return `{ready} crop(s) ready! Walk up and {use} to harvest.`
+		return `{ready} crop(s) ready! Walk up and {use} to harvest before they get overripe.`
 	elseif seeds > 0 and planted < size.Width * size.Depth then
 		return `Stand on brown soil and {use} to plant.`
 	elseif hasGoods and seeds == 0 then

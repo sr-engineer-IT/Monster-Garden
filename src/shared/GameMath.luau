@@ -98,6 +98,18 @@ function GameMath.IsCropGoods(key: string): boolean
 	return Crops.ById[base] ~= nil
 end
 
+-- Coins for harvesting an Overripe crop: a share of its sell price, with the Rebirth bonus
+-- (the same bonus selling gets)
+function GameMath.OverripeCoins(goodsKey: string, rebirths: number): number
+	return math.floor(GameMath.SellValue(goodsKey) * Config.Spoil.OverripeShare * GameMath.RebirthCoinMult(rebirths))
+end
+
+-- How long a ripe crop stays fresh before it turns Overripe (Config.Spoil)
+function GameMath.FreshSeconds(crop: any): number
+	local spoil = Config.Spoil
+	return math.clamp(crop.GrowSeconds * spoil.FreshMult, spoil.MinSeconds, spoil.MaxSeconds)
+end
+
 -- Bag capacity (total goods items)
 function GameMath.InventoryCapacity(data: any): number
 	local passes = data.Purchases.PassesOwned

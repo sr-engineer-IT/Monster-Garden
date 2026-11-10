@@ -7,7 +7,8 @@ Do these in order. When one is done, change `[ ]` to `[x]`.
 ### 1. Test (15 minutes)
 Close the place without saving → run `build-place.bat` → open `MonsterGarden.rbxlx` → press **Play**.
 
-- [ ] Type `/test` in chat. Output says **12 passed** (all tests, 0 failed).
+- [ ] Type `/test` in chat. Output says **13 passed** (all tests, 0 failed).
+- [ ] Overripe: after your first night, plant a carrot and leave it ripe for 2 minutes in the day. The prompt says "overripe in …s!", then the carrot turns brownish and says "half price". Harvest it: you get 8 coins and nothing goes in your bag.
 - [ ] You hear music. Harvest = pop sound. Sell = coin sound.
 - [ ] Crops look like real plants (carrot patch, corn, tomatoes...) and grow in 3 steps. Watering splashes, harvesting sparkles.
 - [ ] Type `/night`. Monsters come. Attack works.

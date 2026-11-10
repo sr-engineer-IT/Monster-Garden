@@ -239,6 +239,21 @@ Config.Kidnap = {
 }
 
 -- Things to do while waiting (section 22.1) -----------------------------------
+-- Ripe crops turn Overripe if they are not harvested in time. The fresh time only counts down in
+-- the day while the owner is in the game (never offline or at night, so the Moonlit roll at the
+-- end of the night still works). Fresh time = GrowSeconds x FreshMult, kept between Min and Max.
+-- Harvesting an Overripe crop pays OverripeShare of its sell price in coins at once (nothing goes
+-- in the bag, so it works with a full bag too). Farmers and Auto-Harvest harvest them as well.
+Config.Spoil = {
+	Enabled = true,
+	FromStage = 2, -- new players learn farming first; spoiling starts after the first night
+	FreshMult = 3,
+	MinSeconds = 120,
+	MaxSeconds = 1800,
+	WarnShare = 0.3, -- "overripe in Xs!" on the prompt in the last 30% of the fresh time
+	OverripeShare = 0.5, -- Overripe crops pay half price
+}
+
 Config.Engagement = {
 	WaterTapSeconds = 3,
 	WaterTapMaxPerGrowth = 3,

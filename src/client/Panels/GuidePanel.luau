@@ -41,6 +41,7 @@ local function basics(touch: boolean): { { any } }
 			"Choose which seed to plant with the seed buttons at the bottom of the screen.",
 			`While a crop grows, {use} to water it (3 seconds faster each time, up to 3 times).`,
 			`When it says Harvest, {use} to collect it. Some crops grow back several times.`,
+			"Don't wait too long: after your first night, ripe crops left in the ground get overripe (only in the day while you play). Overripe crops pay half price.",
 		} },
 		{ "Selling and buying", {
 			`Go to the merchant cart in the corner of your garden and {use} to open the shop.`,

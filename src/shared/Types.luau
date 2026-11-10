@@ -55,6 +55,8 @@ export type CropRecord = {
 	Mutations: { string },
 	HarvestsLeft: number, -- multi-harvest crops count down to 0
 	WaterTaps: number, -- water taps used this growth
+	RipeFor: number?, -- seconds spent ripe (day, owner online); Overripe at GameMath.FreshSeconds
+	Overripe: boolean?, -- harvest pays half price in coins (Config.Spoil)
 }
 
 export type Spirit = {
