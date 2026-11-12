@@ -328,8 +328,30 @@ local function buildMenu()
 	menu.AnchorPoint = Vector2.new(0, 0)
 	menu.Visible = false
 	menu:FindFirstChildOfClass("UIGridLayout").VerticalAlignment = Enum.VerticalAlignment.Top
-	local toggle = Kit.Button({ Text = "", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 14, 0, 8), Size = UDim2.fromOffset(110, 58), BackgroundColor3 = C.Hud, Parent = gui }, function()
+	-- phones are wide, not tall: 5 buttons per row (2 rows) instead of 2 per row (5 rows)
+	menu.Size = UDim2.fromOffset(5 * 76 + 4 * 8, 0)
+	local menuFit = Kit.New("UIScale", { Parent = menu })
+	local toggle: TextButton
+	toggle = Kit.Button({ Text = "", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 14, 0, 8), Size = UDim2.fromOffset(110, 58), BackgroundColor3 = C.Hud, Parent = gui }, function()
 		menu.Visible = not menu.Visible
+		if menu.Visible then
+			-- still too big for this screen? shrink it so every button shows
+			-- (worked out from the button count, so it is right on the very first open)
+			local shown = 0
+			for _, child in menu:GetChildren() do
+				if child:IsA("GuiButton") and child.Visible then
+					shown += 1
+				end
+			end
+			local rows = math.max(1, math.ceil(shown / 5))
+			local hudScale = toggle.AbsoluteSize.Y / 58 -- the HUD's own scale for this screen
+			local height = (rows * 76 + (rows - 1) * 8) * hudScale
+			local width = (5 * 76 + 4 * 8) * hudScale
+			local top = toggle.AbsolutePosition.Y - gui.AbsolutePosition.Y + toggle.AbsoluteSize.Y + 8 * hudScale
+			local left = toggle.AbsolutePosition.X - gui.AbsolutePosition.X
+			local room = math.min((gui.AbsoluteSize.Y - 10 - top) / height, (gui.AbsoluteSize.X - 10 - left) / width)
+			menuFit.Scale = math.clamp(room, 0.45, 1)
+		end
 	end)
 	Kit.Label({ Text = "☰  Menu", TextSize = 22, Size = UDim2.fromScale(1, 1), Parent = toggle })
 	-- the grid hangs under the toggle (so both scale together on small screens)
