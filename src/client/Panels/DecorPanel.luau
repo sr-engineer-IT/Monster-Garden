@@ -58,9 +58,9 @@ function DecorPanel.Open()
 		local have, placed = stored[decor.Id] or 0, placedCount[decor.Id] or 0
 		Kit.Label({ Text = `{decor.Icon} {decor.Name}`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -buttonWidth, 0, 24), ZIndex = 23, Parent = row })
 		if have > 0 or placed > 0 then
-			Kit.Label({ Text = `📦 {have} in storage  ·  ✅ {placed} placed`, TextSize = 13, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.new(1, -buttonWidth - 10, 0, 24), ZIndex = 23, Parent = row })
+			Kit.Label({ Text = `📦 {have} in storage  ·  ✅ {placed} placed`, TextSize = 14, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.new(1, -buttonWidth - 10, 0, 24), ZIndex = 23, Parent = row })
 		end
-		Kit.Label({ Text = note, TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -buttonWidth, 0, 18), ZIndex = 23, Parent = row })
+		Kit.Label({ Text = note, TextSize = 14, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -buttonWidth, 0, 18), ZIndex = 23, Parent = row })
 	end
 
 	local info = Kit.Row(list, nextOrder(), 96)
@@ -77,7 +77,7 @@ function DecorPanel.Open()
 	local placed, allowance = GardenGrid.CountSoil(data), GardenGrid.SoilAllowance(data)
 	local soilRow = Kit.Row(list, nextOrder(), 64)
 	Kit.Label({ Text = `🟫 Soil tiles: {placed} / {allowance} placed`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -150, 0, 24), ZIndex = 23, Parent = soilRow })
-	Kit.Label({ Text = if placed < allowance then `{allowance - placed} left to place` else "Remove one to move it", TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = soilRow })
+	Kit.Label({ Text = if placed < allowance then `{allowance - placed} left to place` else "Remove one to move it", TextSize = 14, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = soilRow })
 	Kit.RowButton(soilRow, 1, "Place soil", Color3.fromRGB(150, 105, 65), function()
 		beginBuild("soil")
 	end, 134)

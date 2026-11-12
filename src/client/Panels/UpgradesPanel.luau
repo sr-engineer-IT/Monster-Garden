@@ -42,9 +42,9 @@ function UpgradesPanel.Open()
 		Kit.Label({ Text = `{upgrade.Icon} {upgrade.Name}   Lv {level}/{maxLevel}`, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -150, 0, 24), ZIndex = 23, Parent = row })
 		local _, fill = Kit.Bar({ Position = UDim2.fromOffset(0, 28), Size = UDim2.new(1, -150, 0, 12), ZIndex = 23, Parent = row }, C.Good)
 		Kit.SetBar(fill, level / maxLevel)
-		Kit.Label({ Text = `Now: {Upgrades.EffectText(upgrade.Id, level)}`, TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = row })
+		Kit.Label({ Text = `Now: {Upgrades.EffectText(upgrade.Id, level)}`, TextSize = 14, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = row })
 		if cost then
-			Kit.Label({ Text = `Next: {Upgrades.EffectText(upgrade.Id, nextLevel)}`, TextSize = 13, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 62), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = row })
+			Kit.Label({ Text = `Next: {Upgrades.EffectText(upgrade.Id, nextLevel)}`, TextSize = 14, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 62), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = row })
 			local minLevel = upgrade.MinLevels[nextLevel] or 1
 			if data.GardenLevel < minLevel then
 				Kit.RowButton(row, 1, `{Kit.Icons.Lock} Lv {minLevel}`, C.Locked, function() end, 134)

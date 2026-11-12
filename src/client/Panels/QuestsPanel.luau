@@ -45,7 +45,7 @@ local function rewardText(reward: any, data: any): string
 		table.insert(parts, `{Kit.Icons.Season} {reward.SeasonXP} XP`)
 	end
 	if reward.Crates then
-		table.insert(parts, `ð {reward.Crates} crate`)
+		table.insert(parts, `🎁 {reward.Crates} crate`)
 	end
 	return table.concat(parts, "   ")
 end
