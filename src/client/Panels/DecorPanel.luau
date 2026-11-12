@@ -1,7 +1,7 @@
 --!strict
 -- Decor panel (menu button "Decor"): buy and place garden decorations.
--- Stand on an empty soil tile and tap Place: that tile turns into garden (no crops grow there).
--- Hold E on a decoration to pick it up again and get the soil back. The server checks everything.
+-- Place opens build mode (Controllers/BuildController): tap a green grass square, or a soil tile
+-- to turn it into garden (no crops grow there). The server checks everything.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,7 +9,6 @@ local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Decor = require(ConfigFolder:WaitForChild("Decor"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
-local Remotes = require(Shared:WaitForChild("Remotes"))
 local Util = require(Shared:WaitForChild("Util"))
 
 local Client = script.Parent.Parent
@@ -38,6 +37,12 @@ local function costText(decor: Decor.Decor): string
 	return text
 end
 
+-- Close the panel and enter build mode (Controllers/BuildController)
+local function beginBuild(decorId: string?)
+	PanelController.Close()
+	require(Client:WaitForChild("Controllers"):WaitForChild("BuildController")).Begin(decorId)
+end
+
 function DecorPanel.Open()
 	local data = DataController.Get()
 	if not data then
@@ -59,7 +64,7 @@ function DecorPanel.Open()
 
 	local info = Kit.Row(list, nextOrder(), 96)
 	Kit.Label({
-		Text = "1. Stand on an empty soil tile.\n2. Tap Place on a decoration.\nThat tile becomes garden (no crops). Hold E on a decoration to pick it up and get the soil back.",
+		Text = "Tap Place, then tap any green square on the grass (grass decorations keep all your farm land).\nTap a soil tile instead to turn it into garden: no crops grow there.\nUse Remove in build mode to put things back in storage.",
 		TextSize = 14,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -68,7 +73,14 @@ function DecorPanel.Open()
 		ZIndex = 23,
 		Parent = info,
 	})
-	Kit.Label({ Text = `Farm tiles: {total - placed} of {total}   •   Decorations placed: {placed}`, TextSize = 15, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, 0, 0, 22), LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
+	local gardenCount = 0
+	for _ in (data.Plot and data.Plot.Garden) or {} do
+		gardenCount += 1
+	end
+	Kit.Button({ Text = "🔨 Build mode (move / remove)", TextSize = 17, Size = UDim2.new(1, 0, 0, 48), BackgroundColor3 = C.Good, LayoutOrder = nextOrder(), ZIndex = 22, Parent = list }, function()
+		beginBuild(nil)
+	end)
+	Kit.Label({ Text = `On grass: {gardenCount}/{Decor.MaxGardenPieces}   •   Farm tiles: {total - placed} of {total}`, TextSize = 15, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, 0, 0, 22), LayoutOrder = nextOrder(), ZIndex = 22, Parent = list })
 
 	-- Owned (in storage) first, then everything for sale
 	local storedAny = false
@@ -82,7 +94,7 @@ function DecorPanel.Open()
 			Kit.Label({ Text = `{decor.Icon} {decor.Name}  x{stored[decor.Id]}`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -120, 0, 24), ZIndex = 23, Parent = row })
 			Kit.Label({ Text = "Free to place (you own it)", TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -120, 0, 18), ZIndex = 23, Parent = row })
 			Kit.RowButton(row, 1, "Place", C.Good, function()
-				Remotes.Get("PlaceDecor"):FireServer(decor.Id)
+				beginBuild(decor.Id)
 			end, 104)
 		end
 	end
@@ -98,7 +110,7 @@ function DecorPanel.Open()
 			Kit.RowButton(row, 1, `{Kit.Icons.Lock} Lv {decor.MinLevel}`, C.Locked, function() end, 134)
 		else
 			Kit.RowButton(row, 1, "Buy & place", C.Accent, function()
-				Remotes.Get("PlaceDecor"):FireServer(decor.Id)
+				beginBuild(decor.Id)
 			end, 134)
 		end
 	end

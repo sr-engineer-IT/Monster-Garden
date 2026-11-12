@@ -15,7 +15,9 @@ Remotes.ClientToServer = {
 	"SelectSeed", -- cropId: seed used by the Plant prompt
 	"BuyItem", -- itemId, qty
 	"SellItems", -- none: sell all goods
-	"PlaceDecor", -- decorId: place (buying if needed) on the tile the player stands on
+	"PlaceDecor", -- decorId, tileId?: place (buying if needed) on the tile the player stands on
+	"PlaceDecorAt", -- decorId, cellId, turns: place on a grass build-grid square (shared/GardenGrid)
+	"RemoveDecor", -- cellId or tileId: decoration back to storage
 	"BuyUpgrade", -- upgradeId: next level at the Upgrade Station
 	"RequestSync", -- none: client asks for a fresh data snapshot
 	"VeteranSkip", -- none: "I know this game" (first session only)

@@ -9,6 +9,7 @@ local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Stages = require(ConfigFolder:WaitForChild("Stages"))
 local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameMath"))
+local GardenGrid = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GardenGrid"))
 
 type Result = { Passed: number, Failed: { string } }
 
@@ -63,6 +64,25 @@ test("Growth uses timestamps and soil level", function(check)
 	check(near(GameMath.GrowSeconds(carrot, 3, 5), 11.2), "soil 3 + Green Thumb 5 = 0.56x grow time")
 	check(GameMath.UpgradeLevel({ Upgrades = { Grow = 3 } }, "Grow") == 3, "upgrade level read from data")
 	check(GameMath.UpgradeLevel({}, "Grow") == 0, "missing upgrades = level 0")
+end)
+
+test("Garden build grid", function(check)
+	local i, j = GardenGrid.Parse(GardenGrid.CellId(-3, 5))
+	check(i == -3 and j == 5, "cell id round trip")
+	check(GardenGrid.Parse("g99_0") == nil, "cells outside the grid are rejected")
+	check(GardenGrid.Parse("x1_2") == nil, "bad cell ids are rejected")
+	-- a 4x4 farm in the middle (tile centers at +-4 and +-12)
+	local farm = {}
+	for _, x in { -12, -4, 4, 12 } do
+		for _, z in { -12, -4, 4, 12 } do
+			table.insert(farm, Vector3.new(x, 0, z))
+		end
+	end
+	check(GardenGrid.IsBlocked(0, 5, farm), "gate lane stays clear")
+	check(GardenGrid.IsBlocked(2, 2, farm), "squares next to the farm are blocked")
+	check(not GardenGrid.IsBlocked(4, 4, farm), "open grass is free")
+	local ci, cj = GardenGrid.CellAt(Vector3.new(33, 0, 30))
+	check(ci == 4 and cj == 4, "point maps to the nearest square")
 end)
 
 test("Offline production is capped", function(check)

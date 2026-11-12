@@ -41,5 +41,6 @@ end
 
 Decor.PickUpHoldSeconds = 1 -- hold E this long to pick a decoration up (so it never happens by accident)
 Decor.MinFarmTiles = 4 -- always keep at least this many soil tiles free for crops
+Decor.MaxGardenPieces = 80 -- most decorations on the grass at once (keeps the server fast)
 
 return Decor

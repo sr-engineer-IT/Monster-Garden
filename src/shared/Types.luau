@@ -114,6 +114,7 @@ export type ProfileData = {
 		SoilLevel: number,
 		SizeIndex: number, -- index into Config.PlotSizes
 		Decor: { [string]: string }, -- tileId -> decoration id (that tile grows no crops)
+		Garden: { [string]: { D: string, R: number } }, -- grass build grid (shared/GardenGrid): cellId -> decoration + quarter turns
 	},
 	Crops: { [string]: CropRecord },
 	Inventory: {

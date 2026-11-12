@@ -12,6 +12,7 @@ local BOOT_ORDER = {
 	"CombatController",
 	"HUDController",
 	"PanelController",
+	"BuildController",
 	"MonsterMarkerController",
 	"SoundController",
 	"GuideController",

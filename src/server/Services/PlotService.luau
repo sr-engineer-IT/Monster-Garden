@@ -329,7 +329,7 @@ local function buildPlot(index: number): Plot
 	local signLabel = Build.Label(signGui, "Free garden", { Font = Enum.Font.FredokaOne })
 
 	local folders = {}
-	for _, name in { "Tiles", "Buildings", "Creatures", "Monsters", "Petals" } do
+	for _, name in { "Tiles", "Buildings", "Creatures", "Monsters", "Petals", "Garden" } do
 		local folder = Instance.new("Folder")
 		folder.Name = name
 		folder.Parent = model

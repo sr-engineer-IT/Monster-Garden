@@ -5,7 +5,10 @@
 --   Place:   Decor panel -> "PlaceDecor" remote -> uses one from storage, or buys one first,
 --            and puts it on the empty soil tile the player stands on.
 --   Pick up: hold E on a decorated tile (CropService.OnTileTriggered) -> back to storage.
--- Saved as data.Plot.Decor[tileId] = decorId and data.Inventory.Decor[decorId] = count.
+--   Grass:   build mode ("PlaceDecorAt" / "RemoveDecor") puts decorations on any free square of
+--            the grass build grid (shared/GardenGrid). These do not use up farm land.
+-- Saved as data.Plot.Decor[tileId] = decorId, data.Plot.Garden[cellId] = { D = decorId, R = turns }
+-- and data.Inventory.Decor[decorId] = count (storage).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,6 +16,7 @@ local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Decor = require(ConfigFolder:WaitForChild("Decor"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local GardenGrid = require(Shared:WaitForChild("GardenGrid"))
 
 local S = require(script.Parent.Parent.Registry)
 local Assets = require(script.Parent.Parent.Assets)
@@ -31,6 +35,7 @@ end
 
 local function ensure(data: any)
 	data.Plot.Decor = data.Plot.Decor or {}
+	data.Plot.Garden = data.Plot.Garden or {}
 	data.Inventory.Decor = data.Inventory.Decor or {}
 end
 
@@ -147,6 +152,18 @@ local function buildArt(decorId: string, cf: CFrame, parent: Instance, rng: Rand
 	end
 end
 
+-- Walk-through and not clickable, so the garden stays easy to move around and prompts keep working
+local function makeStatic(model: Model)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanTouch = false
+			d.CanQuery = false
+		end
+	end
+end
+
 -- Show (or clear) the decoration on one tile: grass look + art, or plain soil again
 local function applyTile(tile: BasePart, tileId: string, decorId: string?)
 	local old = tile:FindFirstChild("Decor")
@@ -170,15 +187,7 @@ local function applyTile(tile: BasePart, tileId: string, decorId: string?)
 	local turn = math.rad((seed % 4) * 90)
 	local top = CFrame.new(tile.Position + Vector3.new(0, tile.Size.Y / 2, 0)) * CFrame.Angles(0, turn, 0)
 	buildArt(decorId, top, model, Random.new(seed))
-	-- Walk-through and not clickable, so the farm stays easy to move around and prompts keep working
-	for _, d in model:GetDescendants() do
-		if d:IsA("BasePart") then
-			d.Anchored = true
-			d.CanCollide = false
-			d.CanTouch = false
-			d.CanQuery = false
-		end
-	end
+	makeStatic(model)
 	model.Parent = tile
 end
 
@@ -206,6 +215,7 @@ function DecorService.RefreshAll(player: Player)
 	for tileId, tile in plot.TileParts do
 		applyTile(tile, tileId, data.Plot.Decor[tileId])
 	end
+	returned += DecorService.RefreshGarden(player, data, plot)
 	if returned > 0 then
 		S.DataService.MarkChanged(player)
 		notify(player, `{returned} decoration(s) went back to your storage. Place them again from the Decor menu.`)
@@ -232,23 +242,55 @@ function DecorService.PickUp(player: Player, tileId: string)
 	notify(player, `Picked up {if decor then decor.Name else "decoration"}. This tile is farm soil again.`)
 end
 
-local function onPlaceDecor(player: Player, data: any, decorId: any)
-	if not S.AntiExploit.IsKeyOf(decorId, Decor.ById) then
+-- Uses one from storage, or buys one. True when the player may place it now.
+local function takeOne(player: Player, data: any, decor: Decor.Decor): boolean
+	local owned = data.Inventory.Decor[decor.Id] or 0
+	if owned > 0 then
+		data.Inventory.Decor[decor.Id] = if owned > 1 then owned - 1 else nil
+		return true
+	end
+	if data.GardenLevel < decor.MinLevel then
+		notify(player, `{decor.Name} unlocks at Garden Level {decor.MinLevel}.`)
+		return false
+	end
+	return S.EconomyService.Spend(player, { Coins = decor.Cost, Essence = decor.Essence })
+end
+
+local function inOwnGarden(player: Player): boolean
+	local root = S.AntiExploit.GetRootPosition(player)
+	if root and S.PlotService.IsInsideOwnerPlot(player, root) then
+		return true
+	end
+	notify(player, "Go to your own garden to decorate.")
+	return false
+end
+
+-- Put a decoration on a soil tile (that tile becomes garden). tileIdArg = the tile tapped in build
+-- mode; without it, the tile the player stands on.
+local function onPlaceDecor(player: Player, data: any, decorId: any, tileIdArg: any)
+	if not S.AntiExploit.IsKeyOf(decorId, Decor.ById) or (tileIdArg ~= nil and not S.AntiExploit.IsString(tileIdArg, 16)) then
 		return
 	end
 	ensure(data)
 	local decor = Decor.ById[decorId]
-	local root = S.AntiExploit.GetRootPosition(player)
 	local tileId, tile = nil, nil
-	if root then
-		tileId, tile = S.PlotService.TileAt(player, root, TILE_REACH)
+	if tileIdArg then
+		if not inOwnGarden(player) then
+			return
+		end
+		tileId, tile = tileIdArg, S.PlotService.GetTilePart(player, tileIdArg)
+	else
+		local root = S.AntiExploit.GetRootPosition(player)
+		if root then
+			tileId, tile = S.PlotService.TileAt(player, root, TILE_REACH)
+		end
 	end
 	if not tileId or not tile then
 		notify(player, "Stand on a soil tile in your garden first, then tap Place.")
 		return
 	end
 	if data.Plot.Decor[tileId] then
-		notify(player, "This tile already has a decoration. Hold E on it to pick it up first.")
+		notify(player, "This tile already has a decoration. Remove it first.")
 		return
 	end
 	if data.Crops[tileId] then
@@ -264,27 +306,142 @@ local function onPlaceDecor(player: Player, data: any, decorId: any)
 		notify(player, `Keep at least {Decor.MinFarmTiles} soil tiles for crops! Pick up a decoration or expand your plot.`)
 		return
 	end
-
-	local owned = data.Inventory.Decor[decorId] or 0
-	if owned > 0 then
-		data.Inventory.Decor[decorId] = if owned > 1 then owned - 1 else nil
-	else
-		if data.GardenLevel < decor.MinLevel then
-			notify(player, `{decor.Name} unlocks at Garden Level {decor.MinLevel}.`)
-			return
-		end
-		if not S.EconomyService.Spend(player, { Coins = decor.Cost, Essence = decor.Essence }) then
-			return
-		end
+	if not takeOne(player, data, decor) then
+		return
 	end
 	data.Plot.Decor[tileId] = decorId
 	applyTile(tile, tileId, decorId)
 	S.CropService.RefreshAll(player)
 	S.DataService.MarkChanged(player)
-	notify(player, `{decor.Name} placed! Hold E on it to pick it up again.`)
+	notify(player, `{decor.Name} placed on soil. Hold E on it (or use Remove in build mode) to get the soil back.`)
 end
 
--- Count of placed decorations (for the panel and future rewards)
+-- Grass build grid (shared/GardenGrid) ---------------------------------------------------------------
+
+local function tileOffsets(plot: any): { Vector3 }
+	local list = {}
+	for _, tile in plot.TileParts do
+		table.insert(list, tile.Position - plot.Center)
+	end
+	return list
+end
+
+local function gardenFolder(plot: any): Instance
+	local folder = plot.Model:FindFirstChild("Garden")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Garden"
+		folder.Parent = plot.Model
+	end
+	return folder
+end
+
+local function buildCell(plot: any, cellId: string, entry: any)
+	local i, j = GardenGrid.Parse(cellId)
+	if not i or not j then
+		return
+	end
+	local folder = gardenFolder(plot)
+	local old = folder:FindFirstChild(cellId)
+	if old then
+		old:Destroy()
+	end
+	local model = Instance.new("Model")
+	model.Name = cellId
+	local position = plot.Center + GardenGrid.Offset(i, j) + Vector3.new(0, 0.2, 0) -- top of the grass
+	local cf = CFrame.new(position) * CFrame.Angles(0, math.rad(((entry.R or 0) % 4) * 90), 0)
+	buildArt(entry.D, cf, model, Random.new(seedOf(cellId)))
+	makeStatic(model)
+	model.Parent = folder
+end
+
+-- Rebuild the grass decorations. Pieces that are now blocked (the farm grew over them) go back
+-- to storage.
+function DecorService.RefreshGarden(player: Player, data: any, plot: any): number
+	local offsets = tileOffsets(plot)
+	local returned = 0
+	for cellId, entry in data.Plot.Garden do
+		local i, j = GardenGrid.Parse(cellId)
+		local valid = type(entry) == "table" and Decor.ById[entry.D] ~= nil
+		if not valid or not i or not j or GardenGrid.IsBlocked(i, j, offsets) then
+			data.Plot.Garden[cellId] = nil
+			if valid then
+				data.Inventory.Decor[entry.D] = (data.Inventory.Decor[entry.D] or 0) + 1
+				returned += 1
+			end
+		end
+	end
+	gardenFolder(plot):ClearAllChildren()
+	for cellId, entry in data.Plot.Garden do
+		buildCell(plot, cellId, entry)
+	end
+	return returned
+end
+
+function DecorService.CountGarden(data: any): number
+	local count = 0
+	for _ in (data.Plot.Garden or {}) do
+		count += 1
+	end
+	return count
+end
+
+local function onPlaceDecorAt(player: Player, data: any, decorId: any, cellId: any, turns: any)
+	if not S.AntiExploit.IsKeyOf(decorId, Decor.ById) or not S.AntiExploit.IsInteger(turns, 0, 3) then
+		return
+	end
+	local i, j = GardenGrid.Parse(cellId)
+	local plot = S.PlotService.GetPlot(player)
+	if not i or not j or not plot or not inOwnGarden(player) then
+		return
+	end
+	ensure(data)
+	if data.Plot.Garden[cellId] then
+		notify(player, "Something is already there. Use Remove first.")
+		return
+	end
+	if GardenGrid.IsBlocked(i, j, tileOffsets(plot)) then
+		notify(player, "You can't build there (keep gates, paths, the farm and buildings clear).")
+		return
+	end
+	if DecorService.CountGarden(data) >= Decor.MaxGardenPieces then
+		notify(player, `Your garden is full ({Decor.MaxGardenPieces} decorations). Remove one first.`)
+		return
+	end
+	local decor = Decor.ById[decorId]
+	if not takeOne(player, data, decor) then
+		return
+	end
+	local entry = { D = decorId, R = turns }
+	data.Plot.Garden[cellId] = entry
+	buildCell(plot, cellId, entry)
+	S.DataService.MarkChanged(player)
+end
+
+-- target = a grass cellId or a decorated soil tileId
+local function onRemoveDecor(player: Player, data: any, target: any)
+	if not S.AntiExploit.IsString(target, 16) or not inOwnGarden(player) then
+		return
+	end
+	ensure(data)
+	local entry = data.Plot.Garden[target]
+	if entry then
+		data.Plot.Garden[target] = nil
+		data.Inventory.Decor[entry.D] = (data.Inventory.Decor[entry.D] or 0) + 1
+		local plot = S.PlotService.GetPlot(player)
+		local model = plot and gardenFolder(plot):FindFirstChild(target)
+		if model then
+			model:Destroy()
+		end
+		S.DataService.MarkChanged(player)
+		local decor = Decor.ById[entry.D]
+		notify(player, `{if decor then decor.Name else "Decoration"} went back to storage.`)
+	elseif data.Plot.Decor[target] then
+		DecorService.PickUp(player, target)
+	end
+end
+
+-- Count of decorations on soil tiles (they use up farm land)
 function DecorService.CountPlaced(data: any): number
 	local count = 0
 	for _ in (data.Plot.Decor or {}) do
@@ -297,6 +454,8 @@ function DecorService.Init() end
 
 function DecorService.Start()
 	S.AntiExploit.Bind("PlaceDecor", onPlaceDecor)
+	S.AntiExploit.Bind("PlaceDecorAt", onPlaceDecorAt)
+	S.AntiExploit.Bind("RemoveDecor", onRemoveDecor)
 end
 
 return DecorService
