@@ -129,6 +129,37 @@ local function buildMerchant(plot: Plot)
 	end)
 end
 
+-- Upgrade Station: a workbench where the owner buys permanent upgrades (UpgradeService)
+local function buildUpgradeStation(plot: Plot)
+	local base = plot.Center + WORLD.UpgradeStationOffset
+	local station = Instance.new("Model")
+	station.Name = "UpgradeStation"
+	station.Parent = plot.Model
+	local facing = CFrame.lookAt(base, Vector3.new(plot.Center.X, base.Y, plot.Center.Z))
+	local bench = Build.Part({ Name = "Bench", Size = Vector3.new(8, 3, 3.4), CFrame = facing * CFrame.new(0, 1.5, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, CanCollide = true, Parent = station })
+	-- table top, tool rack and a few tools
+	Build.Part({ Size = Vector3.new(8.6, 0.4, 3.8), CFrame = facing * CFrame.new(0, 3.2, 0), Color = Color3.fromRGB(110, 78, 50), Material = Enum.Material.Wood, Parent = station })
+	Build.Part({ Size = Vector3.new(8, 4, 0.4), CFrame = facing * CFrame.new(0, 5.4, 1.6), Color = Color3.fromRGB(120, 86, 56), Material = Enum.Material.WoodPlanks, Parent = station })
+	for i, color in { Color3.fromRGB(170, 170, 180), Color3.fromRGB(200, 80, 60), Color3.fromRGB(80, 160, 90) } do
+		local x = -3 + i * 1.6
+		Build.Part({ Size = Vector3.new(0.25, 2.4, 0.25), CFrame = facing * CFrame.new(x, 5.2, 1.3), Color = Color3.fromRGB(90, 62, 40), Parent = station })
+		Build.Part({ Size = Vector3.new(0.9, 0.5, 0.2), CFrame = facing * CFrame.new(x, 6.5, 1.3), Color = color, Material = Enum.Material.Metal, Parent = station })
+	end
+	Build.Part({ Size = Vector3.new(1.4, 1, 1), CFrame = facing * CFrame.new(-2.6, 3.9, -0.4), Color = Color3.fromRGB(220, 60, 60), Material = Enum.Material.Metal, Parent = station }) -- toolbox
+	Build.Ball({ Size = Vector3.one * 1, CFrame = facing * CFrame.new(2.4, 3.9, -0.4), Color = Color3.fromRGB(120, 230, 120), Material = Enum.Material.Neon, Parent = station }) -- glowing seed
+
+	local gui = Build.Billboard(bench, 160, 40, 7)
+	gui.Size = UDim2.fromScale(9, 2)
+	Build.Label(gui, "🔧 Upgrades", { TextColor3 = Color3.fromRGB(150, 230, 255), Font = Enum.Font.FredokaOne })
+
+	local prompt = Build.Prompt(bench, "Upgrades", "Upgrade Station", { Distance = 12 })
+	prompt.Triggered:Connect(function(player)
+		if player == plot.Owner then
+			S.UpgradeService.Open(player)
+		end
+	end)
+end
+
 -- Locked Spirit Grove gate teaser (section 22.3)
 local function buildSpiritGate(plot: Plot)
 	local base = plot.Center + WORLD.SpiritGateOffset
@@ -180,7 +211,7 @@ local function buildDecor(model: Model, center: Vector3, index: number)
 
 	-- small grass tufts, flowers and pebbles in the open grass, away from paths, the farm and every
 	-- building spot (keeps room to build and to run around at night)
-	local reserved = { WORLD.MerchantOffset, WORLD.StallOffset, WORLD.PenOffset, WORLD.TowerSpot, WORLD.ShelterSpot, WORLD.SpiritGateOffset, WORLD.CreatureHome, WORLD.SpawnOffset }
+	local reserved = { WORLD.MerchantOffset, WORLD.UpgradeStationOffset, WORLD.StallOffset, WORLD.PenOffset, WORLD.TowerSpot, WORLD.ShelterSpot, WORLD.SpiritGateOffset, WORLD.CreatureHome, WORLD.SpawnOffset }
 	for _, list in { WORLD.LanternPosts, WORLD.TrapSpots, WORLD.NestSpots } do
 		for _, p in list do
 			table.insert(reserved, p)
@@ -315,6 +346,7 @@ local function buildPlot(index: number): Plot
 		SignLabel = signLabel,
 	}
 	buildMerchant(plot)
+	buildUpgradeStation(plot)
 	buildSpiritGate(plot)
 	model.Parent = plotsFolder
 	return plot
@@ -406,6 +438,35 @@ function PlotService.GetTilePart(player: Player, tileId: string): BasePart?
 	return if plot then plot.TileParts[tileId] else nil
 end
 
+-- The player's own tile under (or closest to) a position, within reach studs (flat distance)
+function PlotService.TileAt(player: Player, position: Vector3, reach: number): (string?, BasePart?)
+	local plot = playerPlots[player]
+	if not plot then
+		return nil, nil
+	end
+	local bestId, bestTile, best = nil, nil, reach
+	for tileId, tile in plot.TileParts do
+		local offset = tile.Position - position
+		local flat = math.sqrt(offset.X * offset.X + offset.Z * offset.Z)
+		if flat < best and math.abs(offset.Y) < 8 then
+			bestId, bestTile, best = tileId, tile, flat
+		end
+	end
+	return bestId, bestTile
+end
+
+-- True when the position is on (or within margin of) one of the plot's soil tiles
+function PlotService.IsOnField(plot: Plot, position: Vector3, margin: number?): boolean
+	local limit = TILE / 2 + (margin or 0)
+	for _, tile in plot.TileParts do
+		local p = tile.Position
+		if math.abs(p.X - position.X) <= limit and math.abs(p.Z - position.Z) <= limit then
+			return true
+		end
+	end
+	return false
+end
+
 function PlotService.IsInsideOwnerPlot(player: Player?, position: Vector3): boolean
 	local plot = player and playerPlots[player]
 	return plot ~= nil and PlotService.IsInside(plot, position)
@@ -421,8 +482,10 @@ local function tileShade(tileId: string): number
 end
 
 local function addTile(plot: Plot, tileId: string, position: Vector3)
-	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = SOIL:Lerp(Color3.fromRGB(150, 105, 65), tileShade(tileId)), Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
+	local soilColor = SOIL:Lerp(Color3.fromRGB(150, 105, 65), tileShade(tileId))
+	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = soilColor, Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
 	tile:SetAttribute("TileId", tileId)
+	tile:SetAttribute("SoilColor", soilColor) -- DecorService restores this when a decoration is picked up
 	-- two raised planting rows (the crops sit on them)
 	for _, x in { -1.3, 1.3 } do
 		Build.Part({ Name = "Ridge", Size = Vector3.new(1.5, 0.12, TILE - 1.4), Position = position + Vector3.new(x * (TILE / 8), 0.26, 0), Color = SOIL:Lerp(Color3.fromRGB(160, 115, 75), 0.35), Material = Enum.Material.Ground, Parent = tile })
@@ -466,6 +529,7 @@ function PlotService.BuildTiles(player: Player)
 			end
 		end
 	end
+	S.DecorService.RefreshAll(player)
 	S.CropService.RefreshAll(player)
 end
 

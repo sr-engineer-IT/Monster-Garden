@@ -149,6 +149,9 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	local petPrompt = Build.Prompt(body, "Pet", GameMath.CreatureName(creature), { Distance = 6 })
 	local feedPrompt = Build.Prompt(body, "Feed", "", { Distance = 6 })
 	feedPrompt.KeyboardKeyCode = Enum.KeyCode.R -- different key so it shows next to Pet
+	-- PromptController hides these while a soil tile has an action, so E always harvests
+	petPrompt:SetAttribute("CreaturePrompt", true)
+	feedPrompt:SetAttribute("CreaturePrompt", true)
 
 	-- Smooth hop / idle animation on each player's screen (see Rig.luau, AnimationController)
 	Rig.Attach(model, body, "Creature")

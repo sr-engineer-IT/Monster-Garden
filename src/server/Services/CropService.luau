@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Crops = require(ConfigFolder:WaitForChild("Crops"))
+local Decor = require(ConfigFolder:WaitForChild("Decor"))
+local Upgrades = require(ConfigFolder:WaitForChild("Upgrades"))
 local Products = require(ConfigFolder:WaitForChild("Products"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameMath = require(Shared:WaitForChild("GameMath"))
@@ -76,6 +78,27 @@ local function refreshTile(player: Player, data: any, tileId: string, now: numbe
 	local stage, moonlit = 0, false
 	local crop: Crops.Crop? = nil
 
+	-- Decorated tile: garden, not farm. Hold E to pick the decoration up (DecorService).
+	local decorId = data.Plot.Decor and data.Plot.Decor[tileId]
+	if decorId and record == nil then
+		local decor = Decor.ById[decorId]
+		if prompt then
+			Build.SetPrompt(prompt, "Pick up", if decor then decor.Name else "Decoration", Decor.PickUpHoldSeconds)
+		end
+		local keys = visualKeys[player]
+		if keys and keys[tileId] ~= "decor" then
+			keys[tileId] = "decor"
+			local old = tile:FindFirstChild("Crop")
+			if old then
+				old:Destroy()
+			end
+		end
+		return
+	end
+	if prompt then
+		prompt.HoldDuration = 0
+	end
+
 	if record == nil then
 		local seed = seedFor(player, data)
 		if prompt then
@@ -92,7 +115,7 @@ local function refreshTile(player: Player, data: any, tileId: string, now: numbe
 			return
 		end
 		moonlit = isMoonlit(record)
-		local progress = GameMath.CropProgress(record, data.Plot.SoilLevel, now)
+		local progress = GameMath.CropProgress(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow"))
 		local name = if moonlit then "Moonlit " .. crop.Name else crop.Name
 		if record.Overripe then
 			stage = 3
@@ -109,7 +132,7 @@ local function refreshTile(player: Player, data: any, tileId: string, now: numbe
 			end
 		else
 			stage = if progress < 0.4 then 1 else 2
-			local left = math.ceil(GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now))
+			local left = math.ceil(GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow")))
 			local tapsLeft = Config.Engagement.WaterTapMaxPerGrowth - record.WaterTaps
 			if prompt then
 				if tapsLeft > 0 then
@@ -182,12 +205,16 @@ local function harvest(player: Player, data: any, tileId: string, record: any, a
 	end
 	local crop = Crops.ById[record.Type]
 	local key = GameMath.CropGoodsKey(crop.Id, isMoonlit(record))
+	-- Big Harvest upgrade: a chance of one extra crop (needs a free bag slot; overripe pays coins)
+	local yieldLevel = GameMath.UpgradeLevel(data, "Yield")
+	local bonus = yieldLevel > 0 and Util.Chance(Upgrades.ById.Yield.PerLevel * yieldLevel)
+	local amount = if bonus and (overripe or GameMath.GoodsCount(data) + 2 <= GameMath.InventoryCapacity(data)) then 2 else 1
 	local coins = 0
 	if overripe then
-		coins = GameMath.OverripeCoins(key, data.Rebirths)
+		coins = GameMath.OverripeCoins(key, data.Rebirths) * amount
 		S.EconomyService.AddCoins(player, coins)
 	else
-		data.Inventory.Goods[key] = (data.Inventory.Goods[key] or 0) + 1
+		data.Inventory.Goods[key] = (data.Inventory.Goods[key] or 0) + amount
 	end
 
 	record.HarvestsLeft -= 1
@@ -200,7 +227,8 @@ local function harvest(player: Player, data: any, tileId: string, record: any, a
 		data.Crops[tileId] = nil
 	end
 	if not auto then
-		notify(player, if overripe then `Overripe {GameMath.GoodsName(key)}: +{coins} coins (half price). Harvest sooner for full price!` else `+1 {GameMath.GoodsName(key)}`)
+		local extra = if amount > 1 then " (Big Harvest!)" else ""
+		notify(player, if overripe then `Overripe {GameMath.GoodsName(key)}: +{coins} coins (half price){extra}. Harvest sooner for full price!` else `+{amount} {GameMath.GoodsName(key)}{extra}`)
 	end
 	S.ProgressionService.AddXP(player, crop.XP, "Harvest")
 	S.ObjectiveService.Progress(player, "Harvest")
@@ -221,9 +249,13 @@ function CropService.OnTileTriggered(player: Player, tileId: string)
 
 	local now = os.time()
 	local record = data.Crops[tileId]
+	if record == nil and data.Plot.Decor and data.Plot.Decor[tileId] then
+		S.DecorService.PickUp(player, tileId)
+		return
+	end
 	if record == nil then
 		plant(player, data, tileId)
-	elseif GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
+	elseif GameMath.CropProgress(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow")) >= 1 then
 		if harvest(player, data, tileId, record) then
 			CropArt.Burst(tile, "Harvest")
 		end
@@ -313,7 +345,7 @@ function CropService.FindReadyTile(player: Player, from: Vector3): (string?, Vec
 	local now = os.time()
 	local bestId, bestPosition, best = nil, nil, math.huge
 	for tileId, record in data.Crops do
-		if GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
+		if GameMath.CropProgress(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow")) >= 1 then
 			local tile = S.PlotService.GetTilePart(player, tileId)
 			if tile then
 				local distance = (tile.Position - from).Magnitude
@@ -330,7 +362,7 @@ end
 function CropService.AutoHarvest(player: Player, tileId: string): boolean
 	local data = S.DataService.GetData(player)
 	local record = data and data.Crops[tileId]
-	if not data or not record or GameMath.CropProgress(record, data.Plot.SoilLevel, os.time()) < 1 then
+	if not data or not record or GameMath.CropProgress(record, data.Plot.SoilLevel, os.time(), GameMath.UpgradeLevel(data, "Grow")) < 1 then
 		return false
 	end
 	local done = harvest(player, data, tileId, record, true)
@@ -379,7 +411,7 @@ function CropService.Start()
 					end
 					if runAuto and data.Purchases.PassesOwned.pass_autoharvest then
 						for tileId, record in data.Crops do
-							if GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
+							if GameMath.CropProgress(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow")) >= 1 then
 								CropService.AutoHarvest(player, tileId)
 							end
 						end
@@ -389,7 +421,7 @@ function CropService.Start()
 						local turned = 0
 						for _, record in data.Crops do
 							local crop = Crops.ById[record.Type]
-							if crop and not record.Overripe and GameMath.CropProgress(record, data.Plot.SoilLevel, now) >= 1 then
+							if crop and not record.Overripe and GameMath.CropProgress(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow")) >= 1 then
 								record.RipeFor = (record.RipeFor or 0) + dt
 								if record.RipeFor >= GameMath.FreshSeconds(crop) then
 									record.Overripe = true

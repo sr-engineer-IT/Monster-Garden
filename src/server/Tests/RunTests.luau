@@ -57,6 +57,12 @@ test("Growth uses timestamps and soil level", function(check)
 	check(near(GameMath.GrowSeconds(carrot, 3), 16), "soil 3 = 0.8x grow time")
 	local tomato = { Type = "tomato", PlantedAt = now, HarvestsLeft = 2, WaterTaps = 0, Mutations = {} }
 	check(near(GameMath.GrowSeconds(tomato, 1), 40), "tomato regrows in 40 s after the first harvest")
+	-- Green Thumb upgrade (6% per level, stacks with soil)
+	check(near(GameMath.GrowSeconds(carrot, 1, 0), 20), "Green Thumb 0 = normal grow time")
+	check(near(GameMath.GrowSeconds(carrot, 1, 5), 14), "Green Thumb 5 = 0.7x grow time")
+	check(near(GameMath.GrowSeconds(carrot, 3, 5), 11.2), "soil 3 + Green Thumb 5 = 0.56x grow time")
+	check(GameMath.UpgradeLevel({ Upgrades = { Grow = 3 } }, "Grow") == 3, "upgrade level read from data")
+	check(GameMath.UpgradeLevel({}, "Grow") == 0, "missing upgrades = level 0")
 end)
 
 test("Offline production is capped", function(check)

@@ -437,6 +437,7 @@ Config.World = {
 	ShelterSpot = Vector3.new(-58, 0, 56),
 	NestSpots = { Vector3.new(-58, 0, 30), Vector3.new(-58, 0, 41), Vector3.new(-47, 0, 50), Vector3.new(-35, 0, 56), Vector3.new(-58, 0, 6) },
 	MerchantOffset = Vector3.new(52, 0, 52),
+	UpgradeStationOffset = Vector3.new(32, 0, 54), -- Upgrade Station workbench
 	StallOffset = Vector3.new(54, 0, 30),
 	PenOffset = Vector3.new(56, 0, -36), -- Heist Pen center (3 spots along Z)
 	SpawnOffset = Vector3.new(-12, 0, 56),

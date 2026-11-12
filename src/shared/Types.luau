@@ -113,6 +113,7 @@ export type ProfileData = {
 		Buildings: { [string]: any },
 		SoilLevel: number,
 		SizeIndex: number, -- index into Config.PlotSizes
+		Decor: { [string]: string }, -- tileId -> decoration id (that tile grows no crops)
 	},
 	Crops: { [string]: CropRecord },
 	Inventory: {
@@ -120,6 +121,7 @@ export type ProfileData = {
 		Items: { [string]: number }, -- tokens: rename, recolor, crate
 		Goods: { [string]: number },
 		Cosmetics: { [string]: boolean },
+		Decor: { [string]: number }, -- decoration id -> count in storage
 	},
 	Creatures: { [string]: Creature },
 	Spirits: { [string]: Spirit },
@@ -151,6 +153,7 @@ export type ProfileData = {
 	Quests: { Day: number, Daily: { any }, Week: number, Weekly: { any }, BonusClaimed: boolean },
 	Rebirths: number,
 	Puzzles: { Day: number, Done: { [string]: boolean }, BonusClaimed: boolean },
+	Upgrades: { [string]: number }, -- Upgrade Station levels: Grow, Speed, Yield
 }
 
 return {}

@@ -9,6 +9,7 @@ local Crops = require(ConfigFolder:WaitForChild("Crops"))
 local Creatures = require(ConfigFolder:WaitForChild("Creatures"))
 local Explore = require(ConfigFolder:WaitForChild("Explore"))
 local Mutations = require(ConfigFolder:WaitForChild("Mutations"))
+local Upgrades = require(ConfigFolder:WaitForChild("Upgrades"))
 
 local GameMath = {}
 
@@ -25,8 +26,15 @@ function GameMath.IsCropAvailable(crop: Crops.Crop, stage: number, level: number
 	return stage >= crop.Stage and level >= (crop.MinLevel or 1) and crop.Stage <= Config.MaxStageEnabled
 end
 
--- Seconds a planted record needs in total (regrow time after the first harvest)
-function GameMath.GrowSeconds(record: any, soilLevel: number): number
+-- Level of an Upgrade Station upgrade (0 when not bought)
+function GameMath.UpgradeLevel(data: any, id: string): number
+	local levels = data and data.Upgrades
+	return if levels and type(levels[id]) == "number" then levels[id] else 0
+end
+
+-- Seconds a planted record needs in total (regrow time after the first harvest).
+-- growLevel = Green Thumb upgrade level (each level grows PerLevel faster)
+function GameMath.GrowSeconds(record: any, soilLevel: number, growLevel: number?): number
 	local crop = Crops.ById[record.Type]
 	if crop == nil then
 		return math.huge
@@ -35,16 +43,17 @@ function GameMath.GrowSeconds(record: any, soilLevel: number): number
 	if record.HarvestsLeft < crop.Harvests and crop.RegrowSeconds then
 		base = crop.RegrowSeconds
 	end
-	return base * (Crops.SoilMultiplier[soilLevel] or 1)
+	local upgrade = 1 - Upgrades.ById.Grow.PerLevel * (growLevel or 0)
+	return base * (Crops.SoilMultiplier[soilLevel] or 1) * math.max(upgrade, 0.3)
 end
 
-function GameMath.CropProgress(record: any, soilLevel: number, now: number): number
-	local total = GameMath.GrowSeconds(record, soilLevel)
+function GameMath.CropProgress(record: any, soilLevel: number, now: number, growLevel: number?): number
+	local total = GameMath.GrowSeconds(record, soilLevel, growLevel)
 	return math.clamp((now - record.PlantedAt) / total, 0, 1)
 end
 
-function GameMath.CropSecondsLeft(record: any, soilLevel: number, now: number): number
-	return math.max(0, record.PlantedAt + GameMath.GrowSeconds(record, soilLevel) - now)
+function GameMath.CropSecondsLeft(record: any, soilLevel: number, now: number, growLevel: number?): number
+	return math.max(0, record.PlantedAt + GameMath.GrowSeconds(record, soilLevel, growLevel) - now)
 end
 
 -- Goods keys -------------------------------------------------------------------------

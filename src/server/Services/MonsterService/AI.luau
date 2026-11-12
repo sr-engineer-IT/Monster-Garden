@@ -189,7 +189,9 @@ local function updateNight(m: any, night: any, dt: number, ctx: any)
 			m.State, m.Timer = "Seek", 0
 			return
 		end
-		if not moveTo(m, goal, speed, dt, m.Size / 2 + 2) then
+		-- a little extra reach once attacking, so being nudged by a neighbor does not make it twitch
+		local reach = m.Size / 2 + 2 + (if m.State == "Attack" then 2.5 else 0)
+		if not moveTo(m, goal, speed, dt, reach) then
 			m.State = "Move"
 			return
 		end
@@ -279,8 +281,67 @@ function AI.Update(m: any, night: any, dt: number, clock: number, ctx: any)
 
 	if m.Model.Parent then
 		-- waddle and bob are animated smoothly on each player's screen (AnimationController)
+		-- turn smoothly instead of snapping to each new direction
+		local look = (m.Look or m.Facing):Lerp(m.Facing, math.min(1, dt * 8))
+		if look.Magnitude < 0.05 then
+			look = m.Facing
+		end
+		m.Look = look.Unit
 		local position = m.Position
-		m.Model:PivotTo(CFrame.lookAt(position, position + m.Facing))
+		m.Model:PivotTo(CFrame.lookAt(position, position + m.Look))
+	end
+end
+
+-- Half the visible width of a monster (3D models can be longer than the round hit box)
+local function footprint(m: any): number
+	if m.Footprint == nil then
+		local art = m.Model:FindFirstChild("Art")
+		local width = m.Size * 0.6
+		if art and art:IsA("Model") then
+			local ok, _, size = pcall(Assets.Bounds, art)
+			if ok and size then
+				width = math.max(width, math.max(size.X, size.Z) * 0.45)
+			end
+		end
+		m.Footprint = width
+	end
+	return m.Footprint
+end
+
+local SETTLED = { Breach = true, Attack = true }
+
+-- Keep monsters in the same garden from melting into one blob (run once per frame after Update).
+-- Monsters busy at a gate or target are pushed less, so walkers flow around them.
+function AI.Separate(list: { [string]: any }, dt: number)
+	local byOwner: { [any]: { any } } = {}
+	for _, m in list do
+		if m.Owner and m.Kind == "Night" and m.State ~= "Escape" then
+			local group = byOwner[m.Owner]
+			if not group then
+				group = {}
+				byOwner[m.Owner] = group
+			end
+			table.insert(group, m)
+		end
+	end
+	for _, group in byOwner do
+		for i = 1, #group do
+			local a = group[i]
+			for j = i + 1, #group do
+				local b = group[j]
+				local away = Vector3.new(a.Position.X - b.Position.X, 0, a.Position.Z - b.Position.Z)
+				local need = footprint(a) + footprint(b) + 0.5
+				local gap = away.Magnitude
+				if gap < need then
+					local dir = if gap > 0.05 then away.Unit else Vector3.new(math.cos(i + j), 0, math.sin(i + j))
+					local push = math.min(need - gap, 10 * dt)
+					local aSettled, bSettled = SETTLED[a.State] == true, SETTLED[b.State] == true
+					local aShare = if aSettled == bSettled then 0.5 elseif aSettled then 0.2 else 0.8
+					a.Position += dir * push * aShare
+					b.Position -= dir * push * (1 - aShare)
+				end
+			end
+		end
 	end
 end
 

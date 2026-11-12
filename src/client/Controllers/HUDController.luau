@@ -243,6 +243,9 @@ local function buildMenu()
 		{ "Pets", Color3.fromRGB(255, 150, 40), function()
 			panels("CreaturesPanel").Open()
 		end },
+		{ "Decor", Color3.fromRGB(120, 190, 80), function()
+			panels("DecorPanel").Open()
+		end },
 		{ "Style", Color3.fromRGB(255, 92, 168), function()
 			panels("StorePanel").OpenStyle()
 		end },
@@ -518,7 +521,7 @@ local function hint(now: number): string
 	local ready, overripe, planted, soonest, soonestName = 0, 0, 0, math.huge, nil
 	for _, record in data.Crops do
 		planted += 1
-		local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now)
+		local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow"))
 		local crop = Crops.ById[record.Type]
 		if record.Overripe then
 			overripe += 1

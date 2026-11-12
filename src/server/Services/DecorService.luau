@@ -1,0 +1,302 @@
+--!strict
+-- DecorService: garden decorations (config/Decor.luau). A decoration sits on a soil tile, which
+-- then becomes garden instead of farm: no crops grow there. This is how players trade farm land
+-- for a prettier garden (the plot itself never shrinks, so no paid expansion is ever lost).
+--   Place:   Decor panel -> "PlaceDecor" remote -> uses one from storage, or buys one first,
+--            and puts it on the empty soil tile the player stands on.
+--   Pick up: hold E on a decorated tile (CropService.OnTileTriggered) -> back to storage.
+-- Saved as data.Plot.Decor[tileId] = decorId and data.Inventory.Decor[decorId] = count.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
+local Decor = require(ConfigFolder:WaitForChild("Decor"))
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Remotes = require(Shared:WaitForChild("Remotes"))
+
+local S = require(script.Parent.Parent.Registry)
+local Assets = require(script.Parent.Parent.Assets)
+local Build = require(script.Parent.Parent.Build)
+local Props = require(script.Parent.Parent.Props)
+
+local DecorService = {}
+
+local GRASS = Color3.fromRGB(110, 175, 85)
+local STONE = Color3.fromRGB(160, 160, 165)
+local TILE_REACH = 7 -- same as the client's PromptController: the tile you stand on
+
+local function notify(player: Player, text: string)
+	Remotes.Get("Notify"):FireClient(player, { Text = text })
+end
+
+local function ensure(data: any)
+	data.Plot.Decor = data.Plot.Decor or {}
+	data.Inventory.Decor = data.Inventory.Decor or {}
+end
+
+-- Same random look for the same tile every time it is rebuilt
+local function seedOf(tileId: string): number
+	local h = 7
+	for i = 1, #tileId do
+		h = (h * 31 + string.byte(tileId, i)) % 100003
+	end
+	return h
+end
+
+-- Art -----------------------------------------------------------------------------------------------
+
+local function stones(cf: CFrame, parent: Instance, rng: Random)
+	for i = 1, 4 do
+		local z = -3 + (i - 1) * 2
+		Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, rng:NextNumber(1.6, 2.2), rng:NextNumber(1.6, 2.2)), CFrame = cf * CFrame.new(rng:NextNumber(-0.7, 0.7), 0.15, z) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.2)), Material = Enum.Material.Slate, Parent = parent })
+	end
+end
+
+local function tufts(cf: CFrame, parent: Instance, rng: Random)
+	for _ = 1, 5 do
+		Build.Ball({ Size = Vector3.new(1, 0.7, 1) * rng:NextNumber(0.8, 1.3), CFrame = cf * CFrame.new(rng:NextNumber(-3, 3), 0.2, rng:NextNumber(-3, 3)), Color = GRASS:Lerp(Color3.fromRGB(60, 140, 50), rng:NextNumber(0, 0.6)), Material = Enum.Material.Grass, Parent = parent })
+	end
+	if rng:NextNumber() < 0.6 then
+		Build.Ball({ Size = Vector3.one * 0.6, CFrame = cf * CFrame.new(rng:NextNumber(-2.5, 2.5), 0.5, rng:NextNumber(-2.5, 2.5)), Color = Color3.fromRGB(255, 240, 120), Parent = parent })
+	end
+end
+
+local function pond(cf: CFrame, parent: Instance, rng: Random)
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 6.4, 6.4), CFrame = cf * CFrame.new(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 110, 100), Material = Enum.Material.Slate, Parent = parent })
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 5.4, 5.4), CFrame = cf * CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 150, 210), Material = Enum.Material.Glass, Transparency = 0.15, Parent = parent })
+	for _ = 1, 3 do
+		Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.1, 1.2, 1.2), CFrame = cf * CFrame.new(rng:NextNumber(-1.8, 1.8), 0.4, rng:NextNumber(-1.8, 1.8)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(80, 170, 70), Parent = parent })
+	end
+	Build.Ball({ Size = Vector3.one * 0.5, CFrame = cf * CFrame.new(1, 0.6, -0.8), Color = Color3.fromRGB(255, 160, 200), Parent = parent })
+end
+
+local function smallFountain(cf: CFrame, parent: Instance)
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 6.6, 6.6), CFrame = cf * CFrame.new(0, 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Cobblestone, Parent = parent })
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 5.6, 5.6), CFrame = cf * CFrame.new(0, 1.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(80, 160, 220), Material = Enum.Material.Glass, Parent = parent })
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 1, 1), CFrame = cf * CFrame.new(0, 2.8, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.5, 2.6, 2.6), CFrame = cf * CFrame.new(0, 4.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	local top = Build.Ball({ Size = Vector3.one * 0.9, CFrame = cf * CFrame.new(0, 4.9, 0), Color = Color3.fromRGB(150, 210, 255), Material = Enum.Material.Glass, Parent = parent })
+	local splash = Instance.new("ParticleEmitter")
+	splash.Color = ColorSequence.new(Color3.fromRGB(190, 230, 255))
+	splash.Size = NumberSequence.new(0.3, 0.1)
+	splash.Lifetime = NumberRange.new(0.6, 0.9)
+	splash.Rate = 18
+	splash.Speed = NumberRange.new(4, 6)
+	splash.SpreadAngle = Vector2.new(25, 25)
+	splash.Acceleration = Vector3.new(0, -18, 0)
+	splash.Parent = top
+end
+
+local function statue(cf: CFrame, parent: Instance)
+	Build.Part({ Size = Vector3.new(3.4, 1, 3.4), CFrame = cf * CFrame.new(0, 0.5, 0), Color = Color3.fromRGB(230, 230, 240), Material = Enum.Material.Marble, Parent = parent })
+	Build.Part({ Size = Vector3.new(2, 4, 2), CFrame = cf * CFrame.new(0, 3, 0), Color = Color3.fromRGB(225, 225, 235), Material = Enum.Material.Marble, Parent = parent })
+	local moon = Build.Ball({ Size = Vector3.one * 2.6, CFrame = cf * CFrame.new(0, 6.4, 0), Color = Color3.fromRGB(190, 215, 255), Material = Enum.Material.Neon, Parent = parent })
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(170, 200, 255)
+	light.Range = 18
+	light.Brightness = 1.4
+	light.Shadows = false
+	light.Parent = moon
+end
+
+local function rock(cf: CFrame, parent: Instance)
+	if Assets.Place("Rock", cf, parent, { Width = 5 }) then
+		return
+	end
+	Build.Part({ Size = Vector3.new(4.5, 2.6, 3.4), CFrame = cf * CFrame.new(0, 1, 0) * CFrame.Angles(0.15, 0.4, -0.1), Color = Color3.fromRGB(130, 132, 138), Material = Enum.Material.Slate, Parent = parent })
+	Build.Part({ Size = Vector3.new(3.6, 0.4, 2.6), CFrame = cf * CFrame.new(0, 2.35, 0) * CFrame.Angles(0.15, 0.4, -0.1), Color = Color3.fromRGB(90, 150, 70), Material = Enum.Material.Grass, Parent = parent })
+end
+
+local function buildArt(decorId: string, cf: CFrame, parent: Instance, rng: Random)
+	if decorId == "grass" then
+		tufts(cf, parent, rng)
+	elseif decorId == "path" then
+		stones(cf, parent, rng)
+	elseif decorId == "flowers" then
+		Props.FlowerBed(cf, 6.4, parent, rng)
+	elseif decorId == "bush" then
+		Props.Bush(cf, parent, rng)
+	elseif decorId == "rock" then
+		rock(cf, parent)
+	elseif decorId == "mailbox" then
+		Props.Mailbox(cf, parent)
+	elseif decorId == "bench" then
+		Props.Bench(cf, parent)
+	elseif decorId == "lamp" then
+		Props.Lamp(cf, parent)
+	elseif decorId == "scarecrow" then
+		Props.Scarecrow(cf, parent)
+	elseif decorId == "pond" then
+		pond(cf, parent, rng)
+	elseif decorId == "oak" then
+		if not Assets.Place("Tree_Oak", cf, parent, { Height = 16 }) then
+			Props.Oak(cf, parent, rng)
+		end
+	elseif decorId == "pine" then
+		if not Assets.Place("Tree_Pine", cf, parent, { Height = 18 }) then
+			Props.Pine(cf, parent, rng)
+		end
+	elseif decorId == "well" then
+		Props.Well(cf, parent)
+	elseif decorId == "fountain" then
+		if not Assets.Place("Fountain", cf, parent, { Width = 7 }) then
+			smallFountain(cf, parent)
+		end
+	elseif decorId == "statue" then
+		statue(cf, parent)
+	end
+end
+
+-- Show (or clear) the decoration on one tile: grass look + art, or plain soil again
+local function applyTile(tile: BasePart, tileId: string, decorId: string?)
+	local old = tile:FindFirstChild("Decor")
+	if old then
+		old:Destroy()
+	end
+	local soil = tile:GetAttribute("SoilColor")
+	tile.Color = if decorId then GRASS else (if typeof(soil) == "Color3" then soil else tile.Color)
+	tile.Material = if decorId then Enum.Material.Grass else Enum.Material.Ground
+	for _, child in tile:GetChildren() do
+		if child:IsA("BasePart") and child.Name == "Ridge" then
+			child.Transparency = if decorId then 1 else 0
+		end
+	end
+	if not decorId then
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = "Decor"
+	local seed = seedOf(tileId)
+	local turn = math.rad((seed % 4) * 90)
+	local top = CFrame.new(tile.Position + Vector3.new(0, tile.Size.Y / 2, 0)) * CFrame.Angles(0, turn, 0)
+	buildArt(decorId, top, model, Random.new(seed))
+	-- Walk-through and not clickable, so the farm stays easy to move around and prompts keep working
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanTouch = false
+			d.CanQuery = false
+		end
+	end
+	model.Parent = tile
+end
+
+-- API -----------------------------------------------------------------------------------------------
+
+-- Rebuild every decoration (after the farm tiles are rebuilt). Decorations on tiles that no
+-- longer exist (smaller plot after a Rebirth) go back to storage.
+function DecorService.RefreshAll(player: Player)
+	local data = S.DataService.GetData(player)
+	local plot = S.PlotService.GetPlot(player)
+	if not data or not plot then
+		return
+	end
+	ensure(data)
+	local returned = 0
+	for tileId, decorId in data.Plot.Decor do
+		if not plot.TileParts[tileId] or not Decor.ById[decorId] or data.Crops[tileId] then
+			data.Plot.Decor[tileId] = nil
+			if Decor.ById[decorId] then
+				data.Inventory.Decor[decorId] = (data.Inventory.Decor[decorId] or 0) + 1
+				returned += 1
+			end
+		end
+	end
+	for tileId, tile in plot.TileParts do
+		applyTile(tile, tileId, data.Plot.Decor[tileId])
+	end
+	if returned > 0 then
+		S.DataService.MarkChanged(player)
+		notify(player, `{returned} decoration(s) went back to your storage. Place them again from the Decor menu.`)
+	end
+end
+
+function DecorService.PickUp(player: Player, tileId: string)
+	local data = S.DataService.GetData(player)
+	local tile = S.PlotService.GetTilePart(player, tileId)
+	if not data or not tile then
+		return
+	end
+	ensure(data)
+	local decorId = data.Plot.Decor[tileId]
+	if not decorId then
+		return
+	end
+	data.Plot.Decor[tileId] = nil
+	data.Inventory.Decor[decorId] = (data.Inventory.Decor[decorId] or 0) + 1
+	applyTile(tile, tileId, nil)
+	S.CropService.RefreshAll(player)
+	S.DataService.MarkChanged(player)
+	local decor = Decor.ById[decorId]
+	notify(player, `Picked up {if decor then decor.Name else "decoration"}. This tile is farm soil again.`)
+end
+
+local function onPlaceDecor(player: Player, data: any, decorId: any)
+	if not S.AntiExploit.IsKeyOf(decorId, Decor.ById) then
+		return
+	end
+	ensure(data)
+	local decor = Decor.ById[decorId]
+	local root = S.AntiExploit.GetRootPosition(player)
+	local tileId, tile = nil, nil
+	if root then
+		tileId, tile = S.PlotService.TileAt(player, root, TILE_REACH)
+	end
+	if not tileId or not tile then
+		notify(player, "Stand on a soil tile in your garden first, then tap Place.")
+		return
+	end
+	if data.Plot.Decor[tileId] then
+		notify(player, "This tile already has a decoration. Hold E on it to pick it up first.")
+		return
+	end
+	if data.Crops[tileId] then
+		notify(player, "This tile has a crop. Harvest it (or pick an empty tile) first.")
+		return
+	end
+	local plot = S.PlotService.GetPlot(player)
+	local tiles = 0
+	for _ in (if plot then plot.TileParts else {}) do
+		tiles += 1
+	end
+	if tiles - DecorService.CountPlaced(data) <= Decor.MinFarmTiles then
+		notify(player, `Keep at least {Decor.MinFarmTiles} soil tiles for crops! Pick up a decoration or expand your plot.`)
+		return
+	end
+
+	local owned = data.Inventory.Decor[decorId] or 0
+	if owned > 0 then
+		data.Inventory.Decor[decorId] = if owned > 1 then owned - 1 else nil
+	else
+		if data.GardenLevel < decor.MinLevel then
+			notify(player, `{decor.Name} unlocks at Garden Level {decor.MinLevel}.`)
+			return
+		end
+		if not S.EconomyService.Spend(player, { Coins = decor.Cost, Essence = decor.Essence }) then
+			return
+		end
+	end
+	data.Plot.Decor[tileId] = decorId
+	applyTile(tile, tileId, decorId)
+	S.CropService.RefreshAll(player)
+	S.DataService.MarkChanged(player)
+	notify(player, `{decor.Name} placed! Hold E on it to pick it up again.`)
+end
+
+-- Count of placed decorations (for the panel and future rewards)
+function DecorService.CountPlaced(data: any): number
+	local count = 0
+	for _ in (data.Plot.Decor or {}) do
+		count += 1
+	end
+	return count
+end
+
+function DecorService.Init() end
+
+function DecorService.Start()
+	S.AntiExploit.Bind("PlaceDecor", onPlaceDecor)
+end
+
+return DecorService

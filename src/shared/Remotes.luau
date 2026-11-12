@@ -15,6 +15,8 @@ Remotes.ClientToServer = {
 	"SelectSeed", -- cropId: seed used by the Plant prompt
 	"BuyItem", -- itemId, qty
 	"SellItems", -- none: sell all goods
+	"PlaceDecor", -- decorId: place (buying if needed) on the tile the player stands on
+	"BuyUpgrade", -- upgradeId: next level at the Upgrade Station
 	"RequestSync", -- none: client asks for a fresh data snapshot
 	"VeteranSkip", -- none: "I know this game" (first session only)
 	"MarkTip", -- tipId: a tutorial tip or the guide was seen
@@ -70,6 +72,7 @@ Remotes.ServerToClient = {
 	"MutationEarned",
 	"Notify",
 	"MerchantOpen", -- offers for the merchant panel
+	"OpenUpgrades", -- open the Upgrade Station panel
 	"StallOpen", -- stall listings
 	"LeaderboardUpdate", -- boards
 	"TradeUpdate", -- trade state
