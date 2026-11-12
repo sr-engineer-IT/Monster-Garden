@@ -92,6 +92,8 @@ function Behavior.Tick(player: Player, data: any, plot: any, list: { [string]: a
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local ownerPos = if root and S.PlotService.IsInside(plot, root.Position) then root.Position else nil
+	-- While the owner works the crops, followers wait off the field so they never block harvesting
+	local ownerOnField = ownerPos ~= nil and S.PlotService.IsOnField(plot, ownerPos, 2)
 
 	local index = 0
 	for id, runtime in list do
@@ -124,6 +126,9 @@ function Behavior.Tick(player: Player, data: any, plot: any, list: { [string]: a
 					goal = fightGoal
 				elseif farmGoal then
 					goal = farmGoal
+				elseif ownerOnField then
+					-- step off the soil if standing on it, otherwise wait where it is
+					goal = if S.PlotService.IsOnField(plot, runtime.Position, 1) then plot.Center + Config.World.CreatureHome + ring * 4 else runtime.Position
 				elseif ownerPos and flatDistance(ownerPos, runtime.Position) < Config.CreatureMove.FollowRadius then
 					-- Walk after the owner, but stay put once close so the owner can walk up and pet it
 					goal = if flatDistance(ownerPos, runtime.Position) > Config.CreatureMove.FollowStartDistance then ownerPos + ring * Config.CreatureMove.FollowOffset else runtime.Position

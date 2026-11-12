@@ -8,7 +8,7 @@ local Config = {}
 Config.MaxPlayersPerServer = 8 -- one garden each; also set Max Players = 8 in Game Settings > Places
 Config.DataStoreName = "MoonlitGrove_Profiles"
 Config.ProfileKeyPrefix = "Player_"
-Config.SchemaVersion = 2
+Config.SchemaVersion = 3
 Config.AutosaveSeconds = 60
 Config.UseMockDataStoreInStudio = false -- true: Studio never touches real saved data
 Config.StudioIgnoreOwnedPasses = true -- Studio: ignore passes the creator owns automatically (test like a new player)
@@ -437,6 +437,7 @@ Config.World = {
 	ShelterSpot = Vector3.new(-58, 0, 56),
 	NestSpots = { Vector3.new(-58, 0, 30), Vector3.new(-58, 0, 41), Vector3.new(-47, 0, 50), Vector3.new(-35, 0, 56), Vector3.new(-58, 0, 6) },
 	MerchantOffset = Vector3.new(52, 0, 52),
+	UpgradeStationOffset = Vector3.new(32, 0, 54), -- Upgrade Station workbench
 	StallOffset = Vector3.new(54, 0, 30),
 	PenOffset = Vector3.new(56, 0, -36), -- Heist Pen center (3 spots along Z)
 	SpawnOffset = Vector3.new(-12, 0, 56),

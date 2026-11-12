@@ -12,6 +12,7 @@ local BOOT_ORDER = {
 	"CombatController",
 	"HUDController",
 	"PanelController",
+	"BuildController",
 	"MonsterMarkerController",
 	"SoundController",
 	"GuideController",
@@ -19,7 +20,7 @@ local BOOT_ORDER = {
 	"HumorController",
 }
 
-local PANELS = { "CreaturesPanel", "SocialPanel", "StorePanel", "StallPanel", "TradePanel", "GuidePanel", "QuestsPanel", "PuzzlePanel" }
+local PANELS = { "DecorPanel", "UpgradesPanel", "CreaturesPanel", "SocialPanel", "StorePanel", "StallPanel", "TradePanel", "GuidePanel", "QuestsPanel", "PuzzlePanel" }
 
 type Module = { Init: (() -> ())?, Start: (() -> ())? }
 local loaded: { Module } = {}

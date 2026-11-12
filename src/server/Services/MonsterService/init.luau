@@ -663,6 +663,10 @@ function MonsterService.Start()
 				despawn(monster)
 			end
 		end
+		local ok, err = pcall(AI.Separate, allMonsters, dt)
+		if not ok then
+			warn(`[MonsterService] separate: {err}`)
+		end
 	end)
 end
 

@@ -159,6 +159,7 @@ local function applyPass(player: Player, data: any, passId: string)
 	elseif passId == "pass_vipflair" then
 		data.Titles.VIP = true
 	elseif passId == "pass_plot" then
+		S.PlotService.AutoPlaceSoil(player, data) -- +16 soil tiles next to the farm
 		S.PlotService.BuildTiles(player)
 	elseif passId == "pass_grovetheme" then
 		S.LifecycleService.RefreshGrove(player)

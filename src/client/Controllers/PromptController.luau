@@ -15,6 +15,8 @@ local PromptController = {}
 
 local tilePrompts: { [ProximityPrompt]: BasePart } = {}
 local nearestTile: ProximityPrompt? = nil
+local creaturePrompts: { [ProximityPrompt]: boolean } = {}
+local tileBusy = false -- the nearest soil tile has an action (plant / water / harvest)
 
 local TILE_REACH = 7 -- studs (flat distance from tile center) at which a tile can be chosen
 
@@ -43,6 +45,11 @@ local function update(prompt: ProximityPrompt)
 	if tilePrompts[prompt] then
 		allowed = allowed and prompt == nearestTile
 	end
+	if prompt:GetAttribute("CreaturePrompt") == true then
+		creaturePrompts[prompt] = true
+		-- Pet uses E too: while a tile can be worked, E belongs to the soil
+		allowed = allowed and not tileBusy
+	end
 	prompt.Enabled = allowed and prompt:GetAttribute("Hidden") ~= true
 end
 
@@ -56,6 +63,12 @@ local function watch(prompt: ProximityPrompt)
 			end
 		end)
 	end
+	prompt.Destroying:Connect(function()
+		creaturePrompts[prompt] = nil
+	end)
+	prompt:GetAttributeChangedSignal("CreaturePrompt"):Connect(function()
+		update(prompt)
+	end)
 	prompt:GetAttributeChangedSignal("Hidden"):Connect(function()
 		update(prompt)
 	end)
@@ -89,6 +102,13 @@ local function pickNearestTile()
 		end
 		if best then
 			update(best)
+		end
+	end
+	local busy = best ~= nil and best:GetAttribute("Hidden") ~= true
+	if busy ~= tileBusy then
+		tileBusy = busy
+		for prompt in creaturePrompts do
+			update(prompt)
 		end
 	end
 end

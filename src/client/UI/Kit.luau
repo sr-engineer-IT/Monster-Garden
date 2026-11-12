@@ -63,6 +63,9 @@ Kit.Icons = {
 	Seed = "🌱",
 	Quests = "📜",
 	Rebirth = "🔁",
+	Decor = "🌻",
+	Garden = "🌻",
+	Upgrades = "🔧",
 }
 
 function Kit.New(className: string, props: { [string]: any }?, children: { Instance }?): any

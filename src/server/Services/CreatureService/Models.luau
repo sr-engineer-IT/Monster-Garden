@@ -138,7 +138,7 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 
 	local gui = Build.Billboard(body, 170, 50, size * 0.6 + 1.8)
 	-- Sized in studs (not screen pixels) so tags stay small and never cover the player
-	gui.Size = UDim2.fromScale(5.5, 1.6)
+	gui.Size = UDim2.fromScale(4, 1.15) -- small enough not to cover a phone screen when the creature is close
 	gui.MaxDistance = 50
 	local stars = string.rep("*", #(creature.Mutations or {}))
 	local stageText = if creature.Stage ~= "Adult" then ` ({creature.Stage})` else ""
@@ -149,6 +149,9 @@ function Models.Build(creature: any, equippedGlow: string?): Parts
 	local petPrompt = Build.Prompt(body, "Pet", GameMath.CreatureName(creature), { Distance = 6 })
 	local feedPrompt = Build.Prompt(body, "Feed", "", { Distance = 6 })
 	feedPrompt.KeyboardKeyCode = Enum.KeyCode.R -- different key so it shows next to Pet
+	-- PromptController hides these while a soil tile has an action, so E always harvests
+	petPrompt:SetAttribute("CreaturePrompt", true)
+	feedPrompt:SetAttribute("CreaturePrompt", true)
 
 	-- Smooth hop / idle animation on each player's screen (see Rig.luau, AnimationController)
 	Rig.Attach(model, body, "Creature")

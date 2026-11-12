@@ -23,13 +23,14 @@ local DefaultProfile: Types.ProfileData = {
 	Unlocks = {}, -- feature key -> true
 	TutorialDone = {}, -- tip id -> true
 	VeteranSkipUsed = false,
-	Plot = { Tiles = {}, Buildings = {}, SoilLevel = 1, SizeIndex = 1 },
+	Plot = { Tiles = {}, Buildings = {}, SoilLevel = 1, SizeIndex = 1, Decor = {}, Garden = {}, Soil = {}, SoilReady = false }, -- build grid (shared/GardenGrid): Soil: cellId -> true (soil tile); Garden: cellId -> { D = decoration id, R = turn 0-3 }; SoilReady: first tiles placed. Decor: old soil-tile decorations (moved to Garden in v3)
 	Crops = {}, -- tileId -> CropRecord
 	Inventory = {
 		Seeds = table.clone(Crops.StarterSeeds),
 		Items = {},
 		Goods = {},
 		Cosmetics = {},
+		Decor = {}, -- decoration id -> count in storage (not placed)
 	},
 	Creatures = {}, -- creature id -> Creature
 	Spirits = {}, -- spirit id -> Spirit
@@ -57,6 +58,7 @@ local DefaultProfile: Types.ProfileData = {
 	Quests = { Day = 0, Daily = {}, Week = 0, Weekly = {}, BonusClaimed = false }, -- daily / weekly quests
 	Rebirths = 0,
 	Puzzles = { Day = 0, Done = {}, BonusClaimed = false }, -- daily puzzles
+	Upgrades = { Grow = 0, Speed = 0, Yield = 0 }, -- Upgrade Station levels (config/Upgrades)
 }
 
 return DefaultProfile

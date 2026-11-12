@@ -6,11 +6,72 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameMath"))
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameMath = require(Shared:WaitForChild("GameMath"))
+local GardenGrid = require(Shared:WaitForChild("GardenGrid"))
+local Util = require(Shared:WaitForChild("Util"))
+local Config = require(ReplicatedStorage:WaitForChild("Config"):WaitForChild("Config"))
 
 local Migrations = {}
 
 Migrations.Steps = {} :: { [number]: (data: any) -> () }
+
+-- v2 -> v3: the farm is no longer a fixed square. Every old soil tile (the WxD square for the
+-- plot size, plus the Extra Plot pass strip) becomes a placed soil tile on the build grid at the
+-- same spot, keeping its crop. Decorations that sat on soil tiles move to that grass square.
+Migrations.Steps[2] = function(data: any)
+	local plot = data.Plot
+	plot.Soil = plot.Soil or {}
+	plot.Garden = plot.Garden or {}
+	data.Inventory.Decor = data.Inventory.Decor or {}
+	local oldDecor = plot.Decor or {}
+	plot.Decor = {}
+	local crops = data.Crops or {}
+	data.Crops = {}
+
+	local size = Config.PlotSizes[plot.SizeIndex] or Config.PlotSizes[1]
+	local old: { { Id: string, Offset: Vector3 } } = {}
+	for x = 0, size.Width - 1 do
+		for z = 0, size.Depth - 1 do
+			table.insert(old, { Id = Util.TileId(x, z), Offset = Vector3.new((x - (size.Width - 1) / 2) * Config.TileSizeStuds, 0, (z - (size.Depth - 1) / 2) * Config.TileSizeStuds) })
+		end
+	end
+	local passes = data.Purchases and data.Purchases.PassesOwned
+	if passes and passes.pass_plot then
+		local world = Config.World
+		for i = 0, world.ExtraPlotColumns - 1 do
+			for j = 0, world.ExtraPlotRows - 1 do
+				table.insert(old, { Id = `e{i}_{j}`, Offset = world.ExtraPlotOrigin + Vector3.new(i * Config.TileSizeStuds, 0, -j * Config.TileSizeStuds) })
+			end
+		end
+	end
+
+	local function isFree(i: number, j: number): boolean
+		local id = GardenGrid.CellId(i, j)
+		return not GardenGrid.IsBlocked(i, j) and not plot.Soil[id] and not plot.Garden[id]
+	end
+	for _, tile in old do
+		local i, j = GardenGrid.CellAt(tile.Offset)
+		if not i or not j or not isFree(i, j) then
+			i, j = GardenGrid.NearestFree(i or 0, j or 0, isFree)
+		end
+		local decorId = oldDecor[tile.Id]
+		if i and j then
+			local id = GardenGrid.CellId(i, j)
+			if decorId then
+				plot.Garden[id] = { D = decorId, R = 0 }
+			else
+				plot.Soil[id] = true
+				if crops[tile.Id] then
+					data.Crops[id] = crops[tile.Id]
+				end
+			end
+		elseif decorId then
+			data.Inventory.Decor[decorId] = (data.Inventory.Decor[decorId] or 0) + 1
+		end
+	end
+	plot.SoilReady = true
+end
 
 -- v1 -> v2: life stages now come from age. Creatures saved as Adults with age 0 start at adult age.
 Migrations.Steps[1] = function(data: any)

@@ -45,7 +45,7 @@ local function rewardText(reward: any, data: any): string
 		table.insert(parts, `{Kit.Icons.Season} {reward.SeasonXP} XP`)
 	end
 	if reward.Crates then
-		table.insert(parts, `ð {reward.Crates} crate`)
+		table.insert(parts, `🎁 {reward.Crates} crate`)
 	end
 	return table.concat(parts, "   ")
 end
@@ -168,8 +168,8 @@ function QuestsPanel.Open()
 		if rebirths > 0 then `You have reborn {rebirths} time(s). Current bonus: +{math.floor((GameMath.RebirthCoinMult(rebirths) - 1) * 100 + 0.5)}% coins, +{math.floor((GameMath.RebirthXPMult(rebirths) - 1) * 100 + 0.5)}% XP.` else "Start your garden again, stronger!",
 		`Next rebirth: +{nextCoin}% coins and +{nextXP}% Garden XP forever, plus the Reborn title.`,
 		"Warning: each rebirth also makes nights 25% harder (more monsters), with 25% bigger night rewards.",
-		"You keep: creatures, Essence, unlocked features, buildings, cosmetics, passes and Season.",
-		"You reset: Garden Level, coins, plot size, soil, crops and seeds.",
+		"You keep: creatures, Essence, unlocked features, buildings, upgrades, decorations, cosmetics, passes and Season.",
+		"You reset: Garden Level, coins, farm land (back to 16 soil tiles), soil, crops and seeds.",
 	}
 	Kit.Label({ Text = table.concat(lines, "\n"), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Size = UDim2.new(1, 0, 1, 0), ZIndex = 23, Parent = info })
 

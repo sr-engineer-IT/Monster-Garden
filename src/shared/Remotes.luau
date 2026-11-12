@@ -15,6 +15,12 @@ Remotes.ClientToServer = {
 	"SelectSeed", -- cropId: seed used by the Plant prompt
 	"BuyItem", -- itemId, qty
 	"SellItems", -- none: sell all goods
+	"PlaceSoil", -- cellId: place a soil tile on a build-grid square (up to the plot size allowance)
+	"RemoveSoil", -- cellId: take a soil tile away (no crop growing on it)
+	"PlaceDecorAt", -- decorId, cellId, turns: place on a grass build-grid square (shared/GardenGrid)
+	"RemoveDecor", -- cellId or tileId: decoration back to storage
+	"MoveItem", -- fromCellId, toCellId, turns?: move a decoration or soil tile (with its crop)
+	"BuyUpgrade", -- upgradeId: next level at the Upgrade Station
 	"RequestSync", -- none: client asks for a fresh data snapshot
 	"VeteranSkip", -- none: "I know this game" (first session only)
 	"MarkTip", -- tipId: a tutorial tip or the guide was seen
@@ -70,6 +76,7 @@ Remotes.ServerToClient = {
 	"MutationEarned",
 	"Notify",
 	"MerchantOpen", -- offers for the merchant panel
+	"OpenUpgrades", -- open the Upgrade Station panel
 	"StallOpen", -- stall listings
 	"LeaderboardUpdate", -- boards
 	"TradeUpdate", -- trade state

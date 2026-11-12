@@ -403,7 +403,7 @@ local function buildTown()
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.fromRGB(80, 55, 35)
-	text.Text = "GROW BY DAY.\nDEFEND BY NIGHT.\n\n🧩 DAILY PUZZLES HERE!\nPress E to play.\nThe moon grows hungry..."
+	text.Text = "GROW BY DAY.\nDEFEND BY NIGHT.\n\n🧩 DAILY PUZZLES HERE!\nPress E or tap to play.\nThe moon grows hungry..."
 	text.Parent = surface
 	Instance.new("UIPadding", text).PaddingLeft = UDim.new(0, 20)
 	Build.Part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 30, 30), CFrame = CFrame.new(boardAt + Vector3.new(0, 0.22, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(196, 186, 165), Material = Enum.Material.Cobblestone, Parent = town })

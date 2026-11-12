@@ -17,6 +17,12 @@
 --   /parade         one of every monster walks in a circle around you (type again to stop)
 --   /turn <n> <deg> try a direction fix live, e.g. /turn pip 90 (then tell Claude the number)
 --   /zoo            line up every creature and monster model to check which way they face
+--   /grow [s]       every crop ready now (or skip s seconds of growing)
+--   /growinfo       grow time of every crop with your soil + Green Thumb, and time left on planted ones
+--   /upgrades <n>   set Green Thumb, Swift Boots and Big Harvest to level n (0-5)
+--   /decor [n]      add n (default 5) of every decoration to storage
+--   /cleargarden    put every placed decoration back in storage
+--   /resetfarm      soil tiles back to the classic square in the middle (removes crops)
 --   /test           run the formula unit tests (results in Output)
 --   /resetdata      reset your profile to defaults (rejoin after)
 
@@ -29,6 +35,8 @@ local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Crops = require(ConfigFolder:WaitForChild("Crops"))
 local Creatures = require(ConfigFolder:WaitForChild("Creatures"))
+local Decor = require(ConfigFolder:WaitForChild("Decor"))
+local Upgrades = require(ConfigFolder:WaitForChild("Upgrades"))
 
 local S = require(script.Parent.Parent.Registry)
 local Assets = require(script.Parent.Parent.Assets)
@@ -49,6 +57,7 @@ local function sandbox(player: Player, data: any)
 		data.Inventory.Seeds[crop.Id] = (data.Inventory.Seeds[crop.Id] or 0) + 20
 	end
 	data.Plot.SizeIndex = #Config.PlotSizes
+	S.PlotService.AutoPlaceSoil(player, data)
 	while Crops.SoilUpgradeCost[data.Plot.SoilLevel + 1] do
 		data.Plot.SoilLevel += 1
 	end
@@ -233,6 +242,77 @@ local function handle(player: Player, message: string)
 		parade(player)
 	elseif command == "zoo" then
 		zoo(player)
+	elseif command == "grow" then
+		-- /grow = every crop ready now; /grow 30 = skip 30 seconds of growing
+		local now = os.time()
+		local growLevel = GameMath.UpgradeLevel(data, "Grow")
+		local count = 0
+		for _, record in data.Crops do
+			if arg == "" then
+				record.PlantedAt = math.min(record.PlantedAt, now - math.ceil(GameMath.GrowSeconds(record, data.Plot.SoilLevel, growLevel)))
+			else
+				record.PlantedAt -= amount
+			end
+			count += 1
+		end
+		S.CropService.RefreshAll(player)
+		S.DataService.MarkChanged(player)
+		print(if arg == "" then `[Dev] /grow: {count} crop(s) are ready now.` else `[Dev] /grow: {count} crop(s) skipped {amount} seconds.`)
+	elseif command == "growinfo" then
+		-- grow time of every crop: base, and with your soil level + Green Thumb level
+		local growLevel = GameMath.UpgradeLevel(data, "Grow")
+		print(`[Dev] /growinfo: soil level {data.Plot.SoilLevel}, Green Thumb level {growLevel}`)
+		for _, crop in Crops.List do
+			local record = { Type = crop.Id, HarvestsLeft = crop.Harvests }
+			local base = GameMath.GrowSeconds(record, 1, 0)
+			local yours = GameMath.GrowSeconds(record, data.Plot.SoilLevel, growLevel)
+			print(`    {crop.Name}: {base}s normal -> {math.floor(yours * 10 + 0.5) / 10}s for you ({math.floor((1 - yours / base) * 100 + 0.5)}% faster)`)
+		end
+		for tileId, record in data.Crops do
+			local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, os.time(), growLevel)
+			print(`    planted {tileId}: {record.Type}, {math.ceil(left)}s left`)
+		end
+	elseif command == "upgrades" then
+		-- /upgrades 3 = every Upgrade Station upgrade at level 3 (0 = none, 5 = max)
+		data.Upgrades = data.Upgrades or {}
+		for _, upgrade in Upgrades.List do
+			data.Upgrades[upgrade.Id] = math.clamp(math.floor(amount), 0, #upgrade.Costs)
+		end
+		S.UpgradeService.ApplySpeed(player)
+		S.CropService.RefreshAll(player)
+		S.DataService.MarkChanged(player)
+		print(`[Dev] /upgrades: Green Thumb, Swift Boots and Big Harvest are level {data.Upgrades.Grow}. Try /growinfo.`)
+	elseif command == "decor" then
+		-- /decor 5 = 5 of every decoration in storage (free placing in build mode)
+		local n = if arg == "" then 5 else math.max(0, math.floor(amount))
+		data.Inventory.Decor = data.Inventory.Decor or {}
+		for _, decor in Decor.List do
+			data.Inventory.Decor[decor.Id] = (data.Inventory.Decor[decor.Id] or 0) + n
+		end
+		S.DataService.MarkChanged(player)
+		print(`[Dev] /decor: +{n} of every decoration. Open Garden -> Place to try build mode.`)
+	elseif command == "resetfarm" then
+		-- soil tiles back to the classic square in the middle (crops on them are removed)
+		data.Plot.Soil = {}
+		data.Crops = {}
+		local placed = S.PlotService.AutoPlaceSoil(player, data)
+		S.PlotService.BuildTiles(player)
+		print(`[Dev] /resetfarm: {placed} soil tiles placed in the classic square.`)
+	elseif command == "cleargarden" then
+		-- every placed decoration (grass and soil tiles) back to storage
+		data.Inventory.Decor = data.Inventory.Decor or {}
+		local count = 0
+		for _, map in { data.Plot.Garden or {}, data.Plot.Decor or {} } do
+			for key, value in map do
+				local id = if type(value) == "table" then value.D else value
+				data.Inventory.Decor[id] = (data.Inventory.Decor[id] or 0) + 1
+				map[key] = nil
+				count += 1
+			end
+		end
+		S.PlotService.BuildTiles(player)
+		S.DataService.MarkChanged(player)
+		print(`[Dev] /cleargarden: {count} decoration(s) back in storage.`)
 	elseif command == "test" then
 		require(script.Parent.Parent.Tests.RunTests)()
 	elseif command == "resetdata" then
@@ -252,7 +332,7 @@ function DevCommands.Start()
 	for _, player in Players:GetPlayers() do
 		hook(player)
 	end
-	print("[Dev] Commands: /data, /coins <n>, /essence <n>, /xp <n>, /level <n>, /night, /age <n>, /hunger <n>, /feast, /test, /resetdata")
+	print("[Dev] Commands: /data, /coins <n>, /essence <n>, /xp <n>, /level <n>, /night, /age <n>, /hunger <n>, /feast, /grow [s], /growinfo, /upgrades <n>, /decor [n], /cleargarden, /resetfarm, /test, /resetdata")
 end
 
 return DevCommands

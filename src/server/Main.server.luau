@@ -31,6 +31,8 @@ local BOOT_ORDER = {
 	"PlotService",
 	"CropService",
 	"EconomyService",
+	"DecorService",
+	"UpgradeService",
 	"LifecycleService", -- before CreatureService so saved life stages are fixed before models spawn
 	"CreatureService",
 	"BreedingService",

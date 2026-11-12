@@ -10,7 +10,8 @@ local Workspace = game:GetService("Workspace")
 local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Products = require(ConfigFolder:WaitForChild("Products"))
-local Util = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Util"))
+local GardenGrid = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GardenGrid"))
+local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
 local S = require(script.Parent.Parent.Registry)
 local Build = require(script.Parent.Parent.Build)
@@ -129,6 +130,37 @@ local function buildMerchant(plot: Plot)
 	end)
 end
 
+-- Upgrade Station: a workbench where the owner buys permanent upgrades (UpgradeService)
+local function buildUpgradeStation(plot: Plot)
+	local base = plot.Center + WORLD.UpgradeStationOffset
+	local station = Instance.new("Model")
+	station.Name = "UpgradeStation"
+	station.Parent = plot.Model
+	local facing = CFrame.lookAt(base, Vector3.new(plot.Center.X, base.Y, plot.Center.Z))
+	local bench = Build.Part({ Name = "Bench", Size = Vector3.new(8, 3, 3.4), CFrame = facing * CFrame.new(0, 1.5, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, CanCollide = true, Parent = station })
+	-- table top, tool rack and a few tools
+	Build.Part({ Size = Vector3.new(8.6, 0.4, 3.8), CFrame = facing * CFrame.new(0, 3.2, 0), Color = Color3.fromRGB(110, 78, 50), Material = Enum.Material.Wood, Parent = station })
+	Build.Part({ Size = Vector3.new(8, 4, 0.4), CFrame = facing * CFrame.new(0, 5.4, 1.6), Color = Color3.fromRGB(120, 86, 56), Material = Enum.Material.WoodPlanks, Parent = station })
+	for i, color in { Color3.fromRGB(170, 170, 180), Color3.fromRGB(200, 80, 60), Color3.fromRGB(80, 160, 90) } do
+		local x = -3 + i * 1.6
+		Build.Part({ Size = Vector3.new(0.25, 2.4, 0.25), CFrame = facing * CFrame.new(x, 5.2, 1.3), Color = Color3.fromRGB(90, 62, 40), Parent = station })
+		Build.Part({ Size = Vector3.new(0.9, 0.5, 0.2), CFrame = facing * CFrame.new(x, 6.5, 1.3), Color = color, Material = Enum.Material.Metal, Parent = station })
+	end
+	Build.Part({ Size = Vector3.new(1.4, 1, 1), CFrame = facing * CFrame.new(-2.6, 3.9, -0.4), Color = Color3.fromRGB(220, 60, 60), Material = Enum.Material.Metal, Parent = station }) -- toolbox
+	Build.Ball({ Size = Vector3.one * 1, CFrame = facing * CFrame.new(2.4, 3.9, -0.4), Color = Color3.fromRGB(120, 230, 120), Material = Enum.Material.Neon, Parent = station }) -- glowing seed
+
+	local gui = Build.Billboard(bench, 160, 40, 7)
+	gui.Size = UDim2.fromScale(9, 2)
+	Build.Label(gui, "🔧 Upgrades", { TextColor3 = Color3.fromRGB(150, 230, 255), Font = Enum.Font.FredokaOne })
+
+	local prompt = Build.Prompt(bench, "Upgrades", "Upgrade Station", { Distance = 12 })
+	prompt.Triggered:Connect(function(player)
+		if player == plot.Owner then
+			S.UpgradeService.Open(player)
+		end
+	end)
+end
+
 -- Locked Spirit Grove gate teaser (section 22.3)
 local function buildSpiritGate(plot: Plot)
 	local base = plot.Center + WORLD.SpiritGateOffset
@@ -180,7 +212,7 @@ local function buildDecor(model: Model, center: Vector3, index: number)
 
 	-- small grass tufts, flowers and pebbles in the open grass, away from paths, the farm and every
 	-- building spot (keeps room to build and to run around at night)
-	local reserved = { WORLD.MerchantOffset, WORLD.StallOffset, WORLD.PenOffset, WORLD.TowerSpot, WORLD.ShelterSpot, WORLD.SpiritGateOffset, WORLD.CreatureHome, WORLD.SpawnOffset }
+	local reserved = { WORLD.MerchantOffset, WORLD.UpgradeStationOffset, WORLD.StallOffset, WORLD.PenOffset, WORLD.TowerSpot, WORLD.ShelterSpot, WORLD.SpiritGateOffset, WORLD.CreatureHome, WORLD.SpawnOffset }
 	for _, list in { WORLD.LanternPosts, WORLD.TrapSpots, WORLD.NestSpots } do
 		for _, p in list do
 			table.insert(reserved, p)
@@ -190,7 +222,9 @@ local function buildDecor(model: Model, center: Vector3, index: number)
 	while placed < 26 and tries < 400 do
 		tries += 1
 		local x, z = rng:NextNumber(-HALF + 4, HALF - 4), rng:NextNumber(-HALF + 4, HALF - 4)
-		local ok = math.max(math.abs(x), math.abs(z)) > inner + 2 and math.abs(x) > 9 and math.abs(z) > 9
+		-- only in the strip between the build grid (soil and decorations go anywhere inside it) and the fence
+		local gridEdge = GardenGrid.Range * GardenGrid.CellSize + GardenGrid.CellSize / 2
+		local ok = math.max(math.abs(x), math.abs(z)) > gridEdge + 1 and math.abs(x) > 9 and math.abs(z) > 9
 		if ok and z < -inner + 0 and z > -64 and math.abs(x) < 36 then
 			ok = false -- Extra Plot area (north)
 		end
@@ -298,7 +332,7 @@ local function buildPlot(index: number): Plot
 	local signLabel = Build.Label(signGui, "Free garden", { Font = Enum.Font.FredokaOne })
 
 	local folders = {}
-	for _, name in { "Tiles", "Buildings", "Creatures", "Monsters", "Petals" } do
+	for _, name in { "Tiles", "Buildings", "Creatures", "Monsters", "Petals", "Garden" } do
 		local folder = Instance.new("Folder")
 		folder.Name = name
 		folder.Parent = model
@@ -315,6 +349,7 @@ local function buildPlot(index: number): Plot
 		SignLabel = signLabel,
 	}
 	buildMerchant(plot)
+	buildUpgradeStation(plot)
 	buildSpiritGate(plot)
 	model.Parent = plotsFolder
 	return plot
@@ -406,6 +441,35 @@ function PlotService.GetTilePart(player: Player, tileId: string): BasePart?
 	return if plot then plot.TileParts[tileId] else nil
 end
 
+-- The player's own tile under (or closest to) a position, within reach studs (flat distance)
+function PlotService.TileAt(player: Player, position: Vector3, reach: number): (string?, BasePart?)
+	local plot = playerPlots[player]
+	if not plot then
+		return nil, nil
+	end
+	local bestId, bestTile, best = nil, nil, reach
+	for tileId, tile in plot.TileParts do
+		local offset = tile.Position - position
+		local flat = math.sqrt(offset.X * offset.X + offset.Z * offset.Z)
+		if flat < best and math.abs(offset.Y) < 8 then
+			bestId, bestTile, best = tileId, tile, flat
+		end
+	end
+	return bestId, bestTile
+end
+
+-- True when the position is on (or within margin of) one of the plot's soil tiles
+function PlotService.IsOnField(plot: Plot, position: Vector3, margin: number?): boolean
+	local limit = TILE / 2 + (margin or 0)
+	for _, tile in plot.TileParts do
+		local p = tile.Position
+		if math.abs(p.X - position.X) <= limit and math.abs(p.Z - position.Z) <= limit then
+			return true
+		end
+	end
+	return false
+end
+
 function PlotService.IsInsideOwnerPlot(player: Player?, position: Vector3): boolean
 	local plot = player and playerPlots[player]
 	return plot ~= nil and PlotService.IsInside(plot, position)
@@ -421,8 +485,10 @@ local function tileShade(tileId: string): number
 end
 
 local function addTile(plot: Plot, tileId: string, position: Vector3)
-	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = SOIL:Lerp(Color3.fromRGB(150, 105, 65), tileShade(tileId)), Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
+	local soilColor = SOIL:Lerp(Color3.fromRGB(150, 105, 65), tileShade(tileId))
+	local tile = Build.Part({ Name = tileId, Size = Vector3.new(TILE - 0.6, 0.4, TILE - 0.6), Position = position, Color = soilColor, Material = Enum.Material.Ground, CanCollide = true, Parent = plot.Folders.Tiles })
 	tile:SetAttribute("TileId", tileId)
+	tile:SetAttribute("SoilColor", soilColor) -- DecorService restores this when a decoration is picked up
 	-- two raised planting rows (the crops sit on them)
 	for _, x in { -1.3, 1.3 } do
 		Build.Part({ Name = "Ridge", Size = Vector3.new(1.5, 0.12, TILE - 1.4), Position = position + Vector3.new(x * (TILE / 8), 0.26, 0), Color = SOIL:Lerp(Color3.fromRGB(160, 115, 75), 0.35), Material = Enum.Material.Ground, Parent = tile })
@@ -436,7 +502,90 @@ local function addTile(plot: Plot, tileId: string, position: Vector3)
 	plot.TileParts[tileId] = tile
 end
 
--- (Re)build farm tiles for the current plot size, plus the Extra Plot pass area
+-- Soil tiles on the build grid ----------------------------------------------------------------------
+-- The farm is made of soil tiles the player places anywhere on the grass build grid
+-- (shared/GardenGrid). data.Plot.Soil[cellId] = true; crops use the same id in data.Crops.
+-- The plot size bought at the merchant (and the Extra Plot pass) sets how many may be placed.
+
+local function soilFree(data: any, i: number, j: number): boolean
+	local id = GardenGrid.CellId(i, j)
+	return not GardenGrid.IsBlocked(i, j) and not data.Plot.Soil[id] and not (data.Plot.Garden and data.Plot.Garden[id])
+end
+
+-- Places soil tiles until the player has their full allowance: first on the classic centered
+-- square for their plot size, then on the free squares nearest the middle. Returns how many.
+function PlotService.AutoPlaceSoil(player: Player, data: any): number
+	data.Plot.Soil = data.Plot.Soil or {}
+	local need = GardenGrid.SoilAllowance(data) - GardenGrid.CountSoil(data)
+	local placed = 0
+	if need <= 0 then
+		return 0
+	end
+	local size = Config.PlotSizes[data.Plot.SizeIndex] or Config.PlotSizes[1]
+	for _, offset in GardenGrid.ClassicOffsets(size.Width, size.Depth) do
+		local i, j = GardenGrid.CellAt(offset)
+		if placed < need and i and j and soilFree(data, i, j) then
+			data.Plot.Soil[GardenGrid.CellId(i, j)] = true
+			placed += 1
+		end
+	end
+	while placed < need do
+		local i, j = GardenGrid.NearestFree(0, 0, function(a, b)
+			return soilFree(data, a, b)
+		end)
+		if not i or not j then
+			break
+		end
+		data.Plot.Soil[GardenGrid.CellId(i, j)] = true
+		placed += 1
+	end
+	if placed > 0 then
+		S.DataService.MarkChanged(player)
+	end
+	return placed
+end
+
+-- Keeps the saved layout valid: first tiles for new players, no soil on blocked squares, never
+-- more tiles than the allowance (after a Rebirth the farthest ones go first), no orphan crops.
+local function normalizeSoil(player: Player, data: any)
+	data.Plot.Soil = data.Plot.Soil or {}
+	local soil = data.Plot.Soil
+	if not data.Plot.SoilReady then
+		PlotService.AutoPlaceSoil(player, data)
+		data.Plot.SoilReady = true
+	end
+	for id in soil do
+		local i, j = GardenGrid.Parse(id)
+		if not i or not j or GardenGrid.IsBlocked(i, j) then
+			soil[id] = nil
+		end
+	end
+	local over = GardenGrid.CountSoil(data) - GardenGrid.SoilAllowance(data)
+	if over > 0 then
+		local list = {}
+		for id in soil do
+			local i, j = GardenGrid.Parse(id)
+			table.insert(list, { Id = id, Crop = data.Crops[id] ~= nil, Far = (i or 0) ^ 2 + (j or 0) ^ 2 })
+		end
+		-- empty tiles first, then the farthest from the middle
+		table.sort(list, function(a, b)
+			if a.Crop ~= b.Crop then
+				return not a.Crop
+			end
+			return a.Far > b.Far
+		end)
+		for index = 1, over do
+			soil[list[index].Id] = nil
+		end
+	end
+	for id in data.Crops do
+		if not soil[id] then
+			data.Crops[id] = nil
+		end
+	end
+end
+
+-- (Re)build the farm tiles from the saved layout
 function PlotService.BuildTiles(player: Player)
 	local plot = playerPlots[player]
 	local data = S.DataService.GetData(player)
@@ -445,28 +594,67 @@ function PlotService.BuildTiles(player: Player)
 	end
 	plot.Folders.Tiles:ClearAllChildren()
 	table.clear(plot.TileParts)
-
-	local width, depth = PlotService.GetSize(data)
-	for x = 0, width - 1 do
-		for z = 0, depth - 1 do
-			local offset = Vector3.new((x - (width - 1) / 2) * TILE, 0.4, (z - (depth - 1) / 2) * TILE)
-			addTile(plot, Util.TileId(x, z), plot.Center + offset)
+	normalizeSoil(player, data)
+	for id in data.Plot.Soil do
+		local i, j = GardenGrid.Parse(id)
+		if i and j then
+			addTile(plot, id, plot.Center + GardenGrid.Offset(i, j) + Vector3.new(0, 0.4, 0))
 		end
 	end
-	-- wooden border around the farm
-	local halfW, halfD = width * TILE / 2 + 0.5, depth * TILE / 2 + 0.5
-	for _, side in { -1, 1 } do
-		Build.Part({ Name = "Border", Size = Vector3.new(halfW * 2 + 1, 0.8, 0.8), Position = plot.Center + Vector3.new(0, 0.4, side * halfD), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = plot.Folders.Tiles })
-		Build.Part({ Name = "Border", Size = Vector3.new(0.8, 0.8, halfD * 2), Position = plot.Center + Vector3.new(side * halfW, 0.4, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = plot.Folders.Tiles })
-	end
-	if data.Purchases.PassesOwned.pass_plot then
-		for i = 0, WORLD.ExtraPlotColumns - 1 do
-			for j = 0, WORLD.ExtraPlotRows - 1 do
-				addTile(plot, `e{i}_{j}`, plot.Center + WORLD.ExtraPlotOrigin + Vector3.new(i * TILE, 0.4, -j * TILE))
-			end
-		end
-	end
+	S.DecorService.RefreshAll(player)
 	S.CropService.RefreshAll(player)
+	S.DataService.MarkChanged(player)
+end
+
+local function inOwnGarden(player: Player): boolean
+	local root = S.AntiExploit.GetRootPosition(player)
+	if root and PlotService.IsInsideOwnerPlot(player, root) then
+		return true
+	end
+	Remotes.Get("Notify"):FireClient(player, { Text = "Go to your own garden to change your farm." })
+	return false
+end
+
+local function onPlaceSoil(player: Player, data: any, cellId: any)
+	local i, j = GardenGrid.Parse(cellId)
+	if not i or not j or not inOwnGarden(player) then
+		return
+	end
+	data.Plot.Soil = data.Plot.Soil or {}
+	local notify = function(text: string)
+		Remotes.Get("Notify"):FireClient(player, { Text = text })
+	end
+	if data.Plot.Soil[cellId] then
+		return
+	end
+	if data.Plot.Garden and data.Plot.Garden[cellId] then
+		notify("A decoration is there. Remove it first.")
+		return
+	end
+	if GardenGrid.IsBlocked(i, j) then
+		notify("You can't farm there (keep gates, paths and buildings clear).")
+		return
+	end
+	local allowance = GardenGrid.SoilAllowance(data)
+	if GardenGrid.CountSoil(data) >= allowance then
+		notify(`All {allowance} soil tiles are placed. Remove one, or buy more farm land at the merchant cart.`)
+		return
+	end
+	data.Plot.Soil[cellId] = true
+	PlotService.BuildTiles(player)
+end
+
+local function onRemoveSoil(player: Player, data: any, cellId: any)
+	local i, j = GardenGrid.Parse(cellId)
+	if not i or not j or not inOwnGarden(player) or not (data.Plot.Soil and data.Plot.Soil[cellId]) then
+		return
+	end
+	if data.Crops[cellId] then
+		Remotes.Get("Notify"):FireClient(player, { Text = "A crop is growing there. Harvest it first, then move the tile." })
+		return
+	end
+	data.Plot.Soil[cellId] = nil
+	PlotService.BuildTiles(player)
 end
 
 -- Garden theme cosmetic recolors hedges and ground
@@ -500,6 +688,8 @@ function PlotService.Init()
 end
 
 function PlotService.Start()
+	S.AntiExploit.Bind("PlaceSoil", onPlaceSoil)
+	S.AntiExploit.Bind("RemoveSoil", onRemoveSoil)
 	local function onPlayerAdded(player: Player)
 		assign(player)
 		player.CharacterAdded:Connect(function(character)

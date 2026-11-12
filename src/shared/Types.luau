@@ -112,7 +112,11 @@ export type ProfileData = {
 		Tiles: { [string]: boolean },
 		Buildings: { [string]: any },
 		SoilLevel: number,
-		SizeIndex: number, -- index into Config.PlotSizes
+		SizeIndex: number, -- index into Config.PlotSizes (how many soil tiles may be placed)
+		Decor: { [string]: string }, -- tileId -> decoration id (that tile grows no crops)
+		Garden: { [string]: { D: string, R: number } }, -- grass build grid (shared/GardenGrid): cellId -> decoration + quarter turns
+		Soil: { [string]: boolean }, -- build grid cellId -> soil tile (crops grow here; data.Crops is keyed by the same id)
+		SoilReady: boolean, -- the first soil tiles were placed (new players get the classic square)
 	},
 	Crops: { [string]: CropRecord },
 	Inventory: {
@@ -120,6 +124,7 @@ export type ProfileData = {
 		Items: { [string]: number }, -- tokens: rename, recolor, crate
 		Goods: { [string]: number },
 		Cosmetics: { [string]: boolean },
+		Decor: { [string]: number }, -- decoration id -> count in storage
 	},
 	Creatures: { [string]: Creature },
 	Spirits: { [string]: Spirit },
@@ -151,6 +156,7 @@ export type ProfileData = {
 	Quests: { Day: number, Daily: { any }, Week: number, Weekly: { any }, BonusClaimed: boolean },
 	Rebirths: number,
 	Puzzles: { Day: number, Done: { [string]: boolean }, BonusClaimed: boolean },
+	Upgrades: { [string]: number }, -- Upgrade Station levels: Grow, Speed, Yield
 }
 
 return {}

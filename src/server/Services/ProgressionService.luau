@@ -77,7 +77,7 @@ local function onLevelUp(player: Player, data: any, level: number)
 			table.insert(parts, "New seeds at the merchant")
 		end
 		if micro.PlotOffered then
-			table.insert(parts, "Bigger plot available")
+			table.insert(parts, "More farm land available")
 		end
 		if micro.Title then
 			data.Titles[micro.Title] = true

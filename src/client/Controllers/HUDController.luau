@@ -20,6 +20,7 @@ local Crops = require(ConfigFolder:WaitForChild("Crops"))
 local Objectives = require(ConfigFolder:WaitForChild("Objectives"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameMath = require(Shared:WaitForChild("GameMath"))
+local GardenGrid = require(Shared:WaitForChild("GardenGrid"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Util = require(Shared:WaitForChild("Util"))
 
@@ -55,6 +56,9 @@ local attackButton: TextButton
 local actionColumn: Frame
 local menuButtons: { [string]: TextButton } = {}
 local menuBadges: { [string]: TextLabel } = {}
+local menuToggleBadge: TextLabel? = nil -- touch screens: badge on the folded "Menu" button
+local menuRoot: GuiObject? = nil -- the menu grid (desktop) or the folded "Menu" button (touch)
+local buildHidden = false -- build mode hides the menu, seed bar and action buttons
 local actionButtons: { [string]: TextButton } = {}
 local toastHolder: Frame
 local bannerFrame: Frame
@@ -82,6 +86,43 @@ local function isTouch(): boolean
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
+-- Roblox's jump button on phones and tablets (bottom right), as screen position and size
+local function jumpButtonRect(): (Vector2?, Vector2?)
+	local playerGui = player:FindFirstChild("PlayerGui")
+	local touchGui = playerGui and playerGui:FindFirstChild("TouchGui")
+	local frame = touchGui and touchGui:FindFirstChild("TouchControlFrame")
+	local jump = frame and frame:FindFirstChild("JumpButton")
+	if jump and jump:IsA("GuiObject") and jump.Visible and jump.AbsoluteSize.X > 0 then
+		return jump.AbsolutePosition, jump.AbsoluteSize
+	end
+	return nil, nil
+end
+
+-- Bottom-right corner: on touch screens the jump button lives there, so Attack sits to its left
+-- and the action buttons stack above it (never on top of jump). Desktop keeps the corner.
+local function placeCornerButtons()
+	if not attackButton or not actionColumn then
+		return
+	end
+	if not isTouch() then
+		attackButton.Position = UDim2.new(1, -24, 1, -24)
+		-- keep the action stack above the Attack button while it shows
+		actionColumn.Position = if attackButton.Visible then UDim2.new(1, -16, 1, -150) else UDim2.new(1, -16, 1, -24)
+		return
+	end
+	local jumpPos, jumpSize = jumpButtonRect()
+	local origin = gui.AbsolutePosition
+	if jumpPos and jumpSize then
+		local gap = 14
+		attackButton.Position = UDim2.fromOffset(jumpPos.X - gap - origin.X, jumpPos.Y + jumpSize.Y - origin.Y)
+		actionColumn.Position = UDim2.fromOffset(jumpPos.X + jumpSize.X - origin.X, jumpPos.Y - gap - origin.Y)
+	else
+		-- no jump button found yet: leave room for Roblox's default one (about 100 x 100 in the corner)
+		attackButton.Position = UDim2.new(1, -120, 1, -20)
+		actionColumn.Position = UDim2.new(1, -16, 1, -120)
+	end
+end
+
 -- Banners and toasts --------------------------------------------------------------------------
 
 local function runBanners()
@@ -104,6 +145,20 @@ local function runBanners()
 		task.wait(0.2)
 	end
 	bannerBusy = false
+end
+
+-- Build mode (BuildController): hide the menu, seed bar and action buttons so the garden and the
+-- build bar have the screen. Toasts and the coin counter stay.
+function HUDController.SetBuildMode(on: boolean)
+	buildHidden = on
+	for _, item in { menuRoot, seedBar, actionColumn } do
+		if item then
+			item.Visible = not on
+		end
+	end
+	if on and attackButton then
+		attackButton.Visible = false
+	end
 end
 
 function HUDController.ShowBanner(title: string, text: string?)
@@ -229,7 +284,6 @@ local function buildMenu()
 	local menu = Kit.New("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -14), Size = UDim2.fromOffset(160, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = gui }, {
 		Kit.New("UIGridLayout", { CellSize = UDim2.fromOffset(76, 76), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Bottom }),
 	})
-	fit(menu)
 	local entries = {
 		{ "Store", Color3.fromRGB(72, 206, 88), function()
 			panels("StorePanel").Open()
@@ -242,6 +296,9 @@ local function buildMenu()
 		end },
 		{ "Pets", Color3.fromRGB(255, 150, 40), function()
 			panels("CreaturesPanel").Open()
+		end },
+		{ "Garden", Color3.fromRGB(120, 190, 80), function()
+			panels("DecorPanel").Open()
 		end },
 		{ "Style", Color3.fromRGB(255, 92, 168), function()
 			panels("StorePanel").OpenStyle()
@@ -256,8 +313,37 @@ local function buildMenu()
 			require(script.Parent:WaitForChild("PanelController")).OpenHelp()
 		end },
 	}
+	if not isTouch() then
+		fit(menu)
+		menuRoot = menu
+		for index, entry in entries do
+			menuButtons[entry[1]] = menuButton(menu, entry[1], entry[2], index, entry[3])
+		end
+		return
+	end
+
+	-- Phones and tablets: Roblox's movement joystick lives in the lower-left of the screen, so the
+	-- grid folds into one "Menu" button at the top left (above the joystick area). Tapping it
+	-- opens the grid below it; picking something closes it again.
+	menu.AnchorPoint = Vector2.new(0, 0)
+	menu.Visible = false
+	menu:FindFirstChildOfClass("UIGridLayout").VerticalAlignment = Enum.VerticalAlignment.Top
+	local toggle = Kit.Button({ Text = "", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 14, 0, 8), Size = UDim2.fromOffset(110, 58), BackgroundColor3 = C.Hud, Parent = gui }, function()
+		menu.Visible = not menu.Visible
+	end)
+	Kit.Label({ Text = "☰  Menu", TextSize = 22, Size = UDim2.fromScale(1, 1), Parent = toggle })
+	-- the grid hangs under the toggle (so both scale together on small screens)
+	menu.Position = UDim2.new(0, 0, 1, 8)
+	menu.Parent = toggle
+	menuToggleBadge = Kit.Badge(toggle)
+	menuRoot = toggle
+	fit(toggle)
 	for index, entry in entries do
-		menuButtons[entry[1]] = menuButton(menu, entry[1], entry[2], index, entry[3])
+		local open = entry[3]
+		menuButtons[entry[1]] = menuButton(menu, entry[1], entry[2], index, function()
+			menu.Visible = false
+			open()
+		end)
 	end
 end
 
@@ -465,11 +551,23 @@ local function seasonClaimable(): number
 	return count
 end
 
+local badgeCounts: { [string]: number } = {}
+
 local function setBadge(name: string, count: number)
 	local badge = menuBadges[name]
 	if badge then
 		badge.Visible = count > 0
 		badge.Text = if count > 9 then "9+" else tostring(count)
+	end
+	-- touch screens: the folded "Menu" button shows the total of every badge inside it
+	badgeCounts[name] = count
+	if menuToggleBadge then
+		local total = 0
+		for _, n in badgeCounts do
+			total += n
+		end
+		menuToggleBadge.Visible = total > 0
+		menuToggleBadge.Text = if total > 9 then "9+" else tostring(total)
 	end
 end
 
@@ -518,7 +616,7 @@ local function hint(now: number): string
 	local ready, overripe, planted, soonest, soonestName = 0, 0, 0, math.huge, nil
 	for _, record in data.Crops do
 		planted += 1
-		local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now)
+		local left = GameMath.CropSecondsLeft(record, data.Plot.SoilLevel, now, GameMath.UpgradeLevel(data, "Grow"))
 		local crop = Crops.ById[record.Type]
 		if record.Overripe then
 			overripe += 1
@@ -533,7 +631,6 @@ local function hint(now: number): string
 	for _, count in data.Inventory.Seeds do
 		seeds += count
 	end
-	local size = Config.PlotSizes[data.Plot.SizeIndex] or Config.PlotSizes[1]
 	local hasGoods = next(data.Inventory.Goods) ~= nil
 	local bagFull = GameMath.GoodsCount(data) >= GameMath.InventoryCapacity(data)
 	local use = if isTouch() then "tap" else "press E"
@@ -544,7 +641,7 @@ local function hint(now: number): string
 		return `{overripe} crop(s) overripe (half price). Walk up and {use} to harvest them now!`
 	elseif ready > 0 then
 		return `{ready} crop(s) ready! Walk up and {use} to harvest before they get overripe.`
-	elseif seeds > 0 and planted < size.Width * size.Depth then
+	elseif seeds > 0 and planted < GardenGrid.CountSoil(data) then
 		return `Stand on brown soil and {use} to plant.`
 	elseif hasGoods and seeds == 0 then
 		return "Sell your harvest at the merchant cart, then buy seeds."
@@ -567,7 +664,7 @@ local function tick()
 	local endsAt = player:GetAttribute("PhaseEndsAt")
 	local left = if type(endsAt) == "number" then endsAt - now else 0
 	if phase == "Night" then
-		timerLabel.Text = `{Kit.Icons.Night} Night Â· dawn in {formatTime(left)}`
+		timerLabel.Text = `{Kit.Icons.Night} Night · dawn in {formatTime(left)}`
 		timerLabel.BackgroundColor3 = Color3.fromRGB(60, 50, 160)
 	elseif phase == "Warning" then
 		timerLabel.Text = `{Kit.Icons.Warning} Monsters coming! {formatTime(left)}`
@@ -580,7 +677,7 @@ local function tick()
 		timerLabel.BackgroundColor3 = C.Panel
 	end
 	local danger = phase == "Night" or phase == "Warning"
-	attackButton.Visible = danger or feast.Phase == "Active"
+	attackButton.Visible = not buildHidden and (danger or feast.Phase == "Active")
 	threatLabel.Visible = danger
 	threatLabel.Text = `{Kit.Icons.Monster} Monsters: {player:GetAttribute("MonstersAlive") or 0}`
 	hintLabel.Text = hint(now)
@@ -589,11 +686,11 @@ local function tick()
 		-- Hunger Meter: live from stage 6, greyed teaser from stage 3
 		if data.Unlocks.Hunger then
 			hungerFrame.Visible = true
-			hungerLabel.Text = if hunger.Active then `{Kit.Icons.Hunger} Hunger {math.floor(hunger.Value)} Â· {hunger.Level}` else `{Kit.Icons.Hunger} Hunger: needs 3 players`
+			hungerLabel.Text = if hunger.Active then `{Kit.Icons.Hunger} Hunger {math.floor(hunger.Value)} · {hunger.Level}` else `{Kit.Icons.Hunger} Hunger: needs 3 players`
 			Kit.SetBar(hungerFill, hunger.Value / Config.Hunger.Max)
 		elseif data.Stage >= 3 then
 			hungerFrame.Visible = not danger
-			hungerLabel.Text = `{Kit.Icons.Lock} Hunger Meter Â· Level 17`
+			hungerLabel.Text = `{Kit.Icons.Lock} Hunger Meter · Level 17`
 			Kit.SetBar(hungerFill, 0)
 		else
 			hungerFrame.Visible = false
@@ -616,8 +713,7 @@ local function tick()
 	if alertOwner then
 		actionButtons.Alert.Text = `Help {alertOwner.Name}`
 	end
-	-- Keep the action stack above the Attack button while it shows
-	actionColumn.Position = if attackButton.Visible then UDim2.new(1, -16, 1, -150) else UDim2.new(1, -16, 1, -24)
+	placeCornerButtons()
 
 	if feast.Phase == "Warning" then
 		feastLabel.Visible = true

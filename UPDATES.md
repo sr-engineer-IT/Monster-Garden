@@ -25,8 +25,12 @@ Tick a box by changing `[ ]` to `[x]`. Add your own ideas at the bottom.
 
 ## Player feedback (write here)
 
-- 
-- 
+- [x] Creatures follow me onto the farm and get in the way of harvesting. (Fixed: creatures wait off the field while you farm, and their Pet button hides when a tile can be worked.)
+- [x] Monsters move weirdly and overlap in some spots. (Fixed: monsters keep space between each other and turn smoothly.)
+- [x] More decorations for the garden, not just the lamp and the fence. (Added: 🪴 Decor menu, 15 decorations. A decoration takes one soil tile, so players trade farm land for a prettier garden. Pick it up to get the soil back. Prices in `src/config/Decor.luau`.)
+- [x] Decorate anywhere, step 1: build mode (Decor menu → Place / 🔨 Build mode). Tap any free green square on the grass to place, ↻ to turn, 🗑 to remove. Gates, paths, the farm and building spots stay clear. Up to 80 pieces on the grass.
+- [x] Decorate anywhere, step 2: soil tiles can be placed anywhere (Garden menu -> Place soil). Buying farm land at the merchant (and the Extra Plot pass) gives more tiles to place instead of a bigger square. Old saves convert automatically (save version 3). ✋ Move tool: pick up a decoration or soil tile (with its crop) and drop it on another square.
+- [x] An upgrade station: faster growing, faster walking, more crops per harvest. (Added: 🔧 Upgrade Station workbench in every garden with Green Thumb, Swift Boots and Big Harvest, 5 levels each. Prices in `src/config/Upgrades.luau`.)
 
 ---
 

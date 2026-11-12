@@ -9,6 +9,7 @@ local ConfigFolder = ReplicatedStorage:WaitForChild("Config")
 local Config = require(ConfigFolder:WaitForChild("Config"))
 local Stages = require(ConfigFolder:WaitForChild("Stages"))
 local GameMath = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameMath"))
+local GardenGrid = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GardenGrid"))
 
 type Result = { Passed: number, Failed: { string } }
 
@@ -57,6 +58,48 @@ test("Growth uses timestamps and soil level", function(check)
 	check(near(GameMath.GrowSeconds(carrot, 3), 16), "soil 3 = 0.8x grow time")
 	local tomato = { Type = "tomato", PlantedAt = now, HarvestsLeft = 2, WaterTaps = 0, Mutations = {} }
 	check(near(GameMath.GrowSeconds(tomato, 1), 40), "tomato regrows in 40 s after the first harvest")
+	-- Green Thumb upgrade (6% per level, stacks with soil)
+	check(near(GameMath.GrowSeconds(carrot, 1, 0), 20), "Green Thumb 0 = normal grow time")
+	check(near(GameMath.GrowSeconds(carrot, 1, 5), 14), "Green Thumb 5 = 0.7x grow time")
+	check(near(GameMath.GrowSeconds(carrot, 3, 5), 11.2), "soil 3 + Green Thumb 5 = 0.56x grow time")
+	check(GameMath.UpgradeLevel({ Upgrades = { Grow = 3 } }, "Grow") == 3, "upgrade level read from data")
+	check(GameMath.UpgradeLevel({}, "Grow") == 0, "missing upgrades = level 0")
+end)
+
+test("Garden build grid", function(check)
+	local i, j = GardenGrid.Parse(GardenGrid.CellId(-3, 5))
+	check(i == -3 and j == 5, "cell id round trip")
+	check(GardenGrid.Parse("g99_0") == nil, "cells outside the grid are rejected")
+	check(GardenGrid.Parse("x1_2") == nil, "bad cell ids are rejected")
+	check(GardenGrid.IsBlocked(0, 6), "gate lane near the fence stays clear")
+	check(not GardenGrid.IsBlocked(0, 0), "middle of the garden is free (the farm goes there)")
+	check(not GardenGrid.IsBlocked(4, 4), "open grass is free")
+	check(GardenGrid.IsBlocked(6, 6), "the merchant cart spot stays clear")
+	local ci, cj = GardenGrid.CellAt(Vector3.new(33, 0, 30))
+	check(ci == 4 and cj == 4, "point maps to the nearest square")
+	local player = { Plot = { SizeIndex = 1, Soil = { g0_0 = true } }, Purchases = { PassesOwned = {} } }
+	check(GardenGrid.SoilAllowance(player) == 16, "starting farm = 16 soil tiles")
+	player.Purchases.PassesOwned.pass_plot = true
+	check(GardenGrid.SoilAllowance(player) == 16 + Config.ExtraPlotPassTiles, "Extra Plot pass adds tiles")
+	check(GardenGrid.CountSoil(player) == 1, "placed soil is counted")
+end)
+
+test("Save v2 -> v3: the old farm becomes placed soil tiles", function(check)
+	local Migrations = require(script.Parent.Parent.Services.DataService.Migrations)
+	local carrot = { Type = "carrot", PlantedAt = 1, HarvestsLeft = 1, WaterTaps = 0, Mutations = {} }
+	local data = {
+		Plot = { SizeIndex = 1, SoilLevel = 1, Decor = { ["0_0"] = "bench" } },
+		Crops = { ["1_1"] = carrot },
+		Inventory = { Seeds = {}, Items = {}, Goods = {}, Cosmetics = {}, Decor = {} },
+		Purchases = { PassesOwned = {} },
+	}
+	Migrations.Steps[2](data)
+	check(GardenGrid.CountSoil(data) == 15, `15 soil tiles (16 minus 1 decorated), got {GardenGrid.CountSoil(data)}`)
+	local bench = data.Plot.Garden[GardenGrid.CellId(-1, -1)]
+	check(bench ~= nil and bench.D == "bench", "the decorated tile became a bench on the grass, same spot")
+	check(data.Crops[GardenGrid.CellId(0, 0)] == carrot, "the crop moved with its tile")
+	check(data.Plot.Soil[GardenGrid.CellId(0, 0)] == true, "the crop's tile is soil")
+	check(data.Plot.SoilReady == true and next(data.Plot.Decor) == nil, "layout marked ready, old decor map emptied")
 end)
 
 test("Offline production is capped", function(check)
