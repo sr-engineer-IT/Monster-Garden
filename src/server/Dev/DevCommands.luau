@@ -22,6 +22,7 @@
 --   /upgrades <n>   set Green Thumb, Swift Boots and Big Harvest to level n (0-5)
 --   /decor [n]      add n (default 5) of every decoration to storage
 --   /cleargarden    put every placed decoration back in storage
+--   /resetfarm      soil tiles back to the classic square in the middle (removes crops)
 --   /test           run the formula unit tests (results in Output)
 --   /resetdata      reset your profile to defaults (rejoin after)
 
@@ -56,6 +57,7 @@ local function sandbox(player: Player, data: any)
 		data.Inventory.Seeds[crop.Id] = (data.Inventory.Seeds[crop.Id] or 0) + 20
 	end
 	data.Plot.SizeIndex = #Config.PlotSizes
+	S.PlotService.AutoPlaceSoil(player, data)
 	while Crops.SoilUpgradeCost[data.Plot.SoilLevel + 1] do
 		data.Plot.SoilLevel += 1
 	end
@@ -288,7 +290,14 @@ local function handle(player: Player, message: string)
 			data.Inventory.Decor[decor.Id] = (data.Inventory.Decor[decor.Id] or 0) + n
 		end
 		S.DataService.MarkChanged(player)
-		print(`[Dev] /decor: +{n} of every decoration. Open Decor -> Place to try build mode.`)
+		print(`[Dev] /decor: +{n} of every decoration. Open Garden -> Place to try build mode.`)
+	elseif command == "resetfarm" then
+		-- soil tiles back to the classic square in the middle (crops on them are removed)
+		data.Plot.Soil = {}
+		data.Crops = {}
+		local placed = S.PlotService.AutoPlaceSoil(player, data)
+		S.PlotService.BuildTiles(player)
+		print(`[Dev] /resetfarm: {placed} soil tiles placed in the classic square.`)
 	elseif command == "cleargarden" then
 		-- every placed decoration (grass and soil tiles) back to storage
 		data.Inventory.Decor = data.Inventory.Decor or {}
@@ -323,7 +332,7 @@ function DevCommands.Start()
 	for _, player in Players:GetPlayers() do
 		hook(player)
 	end
-	print("[Dev] Commands: /data, /coins <n>, /essence <n>, /xp <n>, /level <n>, /night, /age <n>, /hunger <n>, /feast, /grow [s], /growinfo, /upgrades <n>, /decor [n], /cleargarden, /test, /resetdata")
+	print("[Dev] Commands: /data, /coins <n>, /essence <n>, /xp <n>, /level <n>, /night, /age <n>, /hunger <n>, /feast, /grow [s], /growinfo, /upgrades <n>, /decor [n], /cleargarden, /resetfarm, /test, /resetdata")
 end
 
 return DevCommands

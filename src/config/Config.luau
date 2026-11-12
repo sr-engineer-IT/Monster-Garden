@@ -8,7 +8,7 @@ local Config = {}
 Config.MaxPlayersPerServer = 8 -- one garden each; also set Max Players = 8 in Game Settings > Places
 Config.DataStoreName = "MoonlitGrove_Profiles"
 Config.ProfileKeyPrefix = "Player_"
-Config.SchemaVersion = 2
+Config.SchemaVersion = 3
 Config.AutosaveSeconds = 60
 Config.UseMockDataStoreInStudio = false -- true: Studio never touches real saved data
 Config.StudioIgnoreOwnedPasses = true -- Studio: ignore passes the creator owns automatically (test like a new player)

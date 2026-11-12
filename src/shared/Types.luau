@@ -112,9 +112,11 @@ export type ProfileData = {
 		Tiles: { [string]: boolean },
 		Buildings: { [string]: any },
 		SoilLevel: number,
-		SizeIndex: number, -- index into Config.PlotSizes
+		SizeIndex: number, -- index into Config.PlotSizes (how many soil tiles may be placed)
 		Decor: { [string]: string }, -- tileId -> decoration id (that tile grows no crops)
 		Garden: { [string]: { D: string, R: number } }, -- grass build grid (shared/GardenGrid): cellId -> decoration + quarter turns
+		Soil: { [string]: boolean }, -- build grid cellId -> soil tile (crops grow here; data.Crops is keyed by the same id)
+		SoilReady: boolean, -- the first soil tiles were placed (new players get the classic square)
 	},
 	Crops: { [string]: CropRecord },
 	Inventory: {

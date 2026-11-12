@@ -64,6 +64,7 @@ Kit.Icons = {
 	Quests = "📜",
 	Rebirth = "🔁",
 	Decor = "🪴",
+	Garden = "🪴",
 	Upgrades = "🔧",
 }
 

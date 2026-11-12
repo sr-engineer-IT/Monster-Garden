@@ -46,7 +46,7 @@ local function basics(touch: boolean): { { any } }
 		{ "Selling and buying", {
 			`Go to the merchant cart in the corner of your garden and {use} to open the shop.`,
 			"Tap Sell all to sell your harvest, then buy more seeds. x5 buys five at once.",
-			"Bigger plots, better soil and creature eggs are sold here as you level up.",
+			"More farm land, better soil and creature eggs are sold here as you level up.",
 		} },
 		{ "Your creatures", {
 			if touch then "Walk up to your rabbit and tap Pet or Feed." else "Walk up to your rabbit: E to pet, R to feed it a crop.",
@@ -66,7 +66,7 @@ local function basics(touch: boolean): { { any } }
 			"Gates upgrade: Wooden, then Reinforced (takes less damage), Iron at Level 20 (spikes hurt monsters), Moon at Level 35 (glows, strongest).",
 		} },
 		{ "Growing your garden", {
-			"Everything you do gives Garden XP. New levels bring new seeds, bigger plots and new systems.",
+			"Everything you do gives Garden XP. New levels bring new seeds, more farm land and new systems.",
 			"Help shows what is coming next. Nothing ever needs Robux.",
 			"Open Quests every day: 3 daily quests and a weekly quest give coins, Essence and Season XP.",
 			"Daily Puzzles (in Quests, or the notice board in town): a riddle, an odd-one-out and a memory game, with rewards.",

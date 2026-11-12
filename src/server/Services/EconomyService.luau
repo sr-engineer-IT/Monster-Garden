@@ -13,6 +13,7 @@ local Shop = require(ConfigFolder:WaitForChild("Shop"))
 local Stages = require(ConfigFolder:WaitForChild("Stages"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameMath = require(Shared:WaitForChild("GameMath"))
+local GardenGrid = require(Shared:WaitForChild("GardenGrid"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Util = require(Shared:WaitForChild("Util"))
 
@@ -204,10 +205,12 @@ local function buildOffers(player: Player, data: any): any
 
 	local nextSize = Config.PlotSizes[data.Plot.SizeIndex + 1]
 	if nextSize then
+		local current = Config.PlotSizes[data.Plot.SizeIndex] or Config.PlotSizes[1]
+		local added = nextSize.Width * nextSize.Depth - current.Width * current.Depth
 		table.insert(offers.Upgrades, {
 			Id = "expand",
-			Name = `Bigger plot ({nextSize.Width}x{nextSize.Depth})`,
-			Info = `{nextSize.Width * nextSize.Depth} farm tiles`,
+			Name = `More farm land (+{added} soil tiles)`,
+			Info = `{GardenGrid.SoilAllowance(data) + added} soil tiles to place anywhere`,
 			Price = nextSize.Cost,
 			Locked = if data.GardenLevel < nextSize.Level then `Level {nextSize.Level}` else nil,
 		})
@@ -312,8 +315,9 @@ local function expandPlot(player: Player, data: any): boolean
 		return false
 	end
 	data.Plot.SizeIndex += 1
+	local added = S.PlotService.AutoPlaceSoil(player, data)
 	S.PlotService.BuildTiles(player)
-	notify(player, `Your plot is now {nextSize.Width}x{nextSize.Depth}!`)
+	notify(player, `+{added} soil tiles next to your farm! Move them anywhere: Garden menu -> Build mode.`)
 	S.ObjectiveService.Progress(player, "Expand")
 	return true
 end

@@ -35,7 +35,7 @@ export type Cosmetic = {
 local Products = {}
 
 Products.Passes = {
-	{ Id = "pass_plot", Name = "Extra Plot", AssetId = 2072326781, OfferedFromStage = 3, Price = 199, Effect = "+16 farm tiles in an expansion area" },
+	{ Id = "pass_plot", Name = "Extra Plot", AssetId = 2072326781, OfferedFromStage = 3, Price = 199, Effect = "+16 soil tiles to place anywhere in your garden" },
 	{ Id = "pass_nest", Name = "Extra Nest Slot", AssetId = 2071201228, OfferedFromStage = 4, Price = 149, Effect = "+1 breeding nest slot" },
 	{ Id = "pass_inventory", Name = "Bigger Inventory", AssetId = 2074802252, OfferedFromStage = 4, Price = 149, Effect = "+100 bag space" },
 	{ Id = "pass_autoharvest", Name = "Auto-Harvest", AssetId = 2071003251, OfferedFromStage = 6, Price = 399, Effect = "Auto-harvests ready crops every 10 s" },

@@ -169,7 +169,7 @@ function QuestsPanel.Open()
 		`Next rebirth: +{nextCoin}% coins and +{nextXP}% Garden XP forever, plus the Reborn title.`,
 		"Warning: each rebirth also makes nights 25% harder (more monsters), with 25% bigger night rewards.",
 		"You keep: creatures, Essence, unlocked features, buildings, upgrades, decorations, cosmetics, passes and Season.",
-		"You reset: Garden Level, coins, plot size, soil, crops and seeds. (Decorations on removed tiles go back to storage.)",
+		"You reset: Garden Level, coins, farm land (back to 16 soil tiles), soil, crops and seeds.",
 	}
 	Kit.Label({ Text = table.concat(lines, "\n"), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Size = UDim2.new(1, 0, 1, 0), ZIndex = 23, Parent = info })
 

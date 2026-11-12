@@ -20,6 +20,7 @@ local Crops = require(ConfigFolder:WaitForChild("Crops"))
 local Objectives = require(ConfigFolder:WaitForChild("Objectives"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameMath = require(Shared:WaitForChild("GameMath"))
+local GardenGrid = require(Shared:WaitForChild("GardenGrid"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Util = require(Shared:WaitForChild("Util"))
 
@@ -243,7 +244,7 @@ local function buildMenu()
 		{ "Pets", Color3.fromRGB(255, 150, 40), function()
 			panels("CreaturesPanel").Open()
 		end },
-		{ "Decor", Color3.fromRGB(120, 190, 80), function()
+		{ "Garden", Color3.fromRGB(120, 190, 80), function()
 			panels("DecorPanel").Open()
 		end },
 		{ "Style", Color3.fromRGB(255, 92, 168), function()
@@ -536,7 +537,6 @@ local function hint(now: number): string
 	for _, count in data.Inventory.Seeds do
 		seeds += count
 	end
-	local size = Config.PlotSizes[data.Plot.SizeIndex] or Config.PlotSizes[1]
 	local hasGoods = next(data.Inventory.Goods) ~= nil
 	local bagFull = GameMath.GoodsCount(data) >= GameMath.InventoryCapacity(data)
 	local use = if isTouch() then "tap" else "press E"
@@ -547,7 +547,7 @@ local function hint(now: number): string
 		return `{overripe} crop(s) overripe (half price). Walk up and {use} to harvest them now!`
 	elseif ready > 0 then
 		return `{ready} crop(s) ready! Walk up and {use} to harvest before they get overripe.`
-	elseif seeds > 0 and planted < size.Width * size.Depth then
+	elseif seeds > 0 and planted < GardenGrid.CountSoil(data) then
 		return `Stand on brown soil and {use} to plant.`
 	elseif hasGoods and seeds == 0 then
 		return "Sell your harvest at the merchant cart, then buy seeds."

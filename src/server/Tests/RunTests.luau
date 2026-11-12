@@ -71,18 +71,35 @@ test("Garden build grid", function(check)
 	check(i == -3 and j == 5, "cell id round trip")
 	check(GardenGrid.Parse("g99_0") == nil, "cells outside the grid are rejected")
 	check(GardenGrid.Parse("x1_2") == nil, "bad cell ids are rejected")
-	-- a 4x4 farm in the middle (tile centers at +-4 and +-12)
-	local farm = {}
-	for _, x in { -12, -4, 4, 12 } do
-		for _, z in { -12, -4, 4, 12 } do
-			table.insert(farm, Vector3.new(x, 0, z))
-		end
-	end
-	check(GardenGrid.IsBlocked(0, 5, farm), "gate lane stays clear")
-	check(GardenGrid.IsBlocked(2, 2, farm), "squares next to the farm are blocked")
-	check(not GardenGrid.IsBlocked(4, 4, farm), "open grass is free")
+	check(GardenGrid.IsBlocked(0, 6), "gate lane near the fence stays clear")
+	check(not GardenGrid.IsBlocked(0, 0), "middle of the garden is free (the farm goes there)")
+	check(not GardenGrid.IsBlocked(4, 4), "open grass is free")
+	check(GardenGrid.IsBlocked(6, 6), "the merchant cart spot stays clear")
 	local ci, cj = GardenGrid.CellAt(Vector3.new(33, 0, 30))
 	check(ci == 4 and cj == 4, "point maps to the nearest square")
+	local player = { Plot = { SizeIndex = 1, Soil = { g0_0 = true } }, Purchases = { PassesOwned = {} } }
+	check(GardenGrid.SoilAllowance(player) == 16, "starting farm = 16 soil tiles")
+	player.Purchases.PassesOwned.pass_plot = true
+	check(GardenGrid.SoilAllowance(player) == 16 + Config.ExtraPlotPassTiles, "Extra Plot pass adds tiles")
+	check(GardenGrid.CountSoil(player) == 1, "placed soil is counted")
+end)
+
+test("Save v2 -> v3: the old farm becomes placed soil tiles", function(check)
+	local Migrations = require(script.Parent.Parent.Services.DataService.Migrations)
+	local carrot = { Type = "carrot", PlantedAt = 1, HarvestsLeft = 1, WaterTaps = 0, Mutations = {} }
+	local data = {
+		Plot = { SizeIndex = 1, SoilLevel = 1, Decor = { ["0_0"] = "bench" } },
+		Crops = { ["1_1"] = carrot },
+		Inventory = { Seeds = {}, Items = {}, Goods = {}, Cosmetics = {}, Decor = {} },
+		Purchases = { PassesOwned = {} },
+	}
+	Migrations.Steps[2](data)
+	check(GardenGrid.CountSoil(data) == 15, `15 soil tiles (16 minus 1 decorated), got {GardenGrid.CountSoil(data)}`)
+	local bench = data.Plot.Garden[GardenGrid.CellId(-1, -1)]
+	check(bench ~= nil and bench.D == "bench", "the decorated tile became a bench on the grass, same spot")
+	check(data.Crops[GardenGrid.CellId(0, 0)] == carrot, "the crop moved with its tile")
+	check(data.Plot.Soil[GardenGrid.CellId(0, 0)] == true, "the crop's tile is soil")
+	check(data.Plot.SoilReady == true and next(data.Plot.Decor) == nil, "layout marked ready, old decor map emptied")
 end)
 
 test("Offline production is capped", function(check)

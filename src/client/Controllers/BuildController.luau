@@ -1,9 +1,12 @@
 --!strict
--- Build mode (Decor panel -> "Place" or "Build mode"): shows the grass build grid on your own
--- garden and lets you tap or click a square to place the chosen decoration, or tap a soil tile to
--- turn it into garden. Remove mode sends decorations back to storage.
--- Green squares are free, yellow ones have a decoration. Gates, paths, the farm and building
--- spots stay clear (shared/GardenGrid). Display only: the server checks every request.
+-- Build mode (Garden panel -> "Place", "Place soil" or "Build mode"): shows the build grid on your
+-- own garden. Three tools:
+--   Place:  tap a green square to put the chosen item there (a soil tile or a decoration)
+--   Move:   tap a decoration or soil tile, then tap a green square to move it there
+--           (soil tiles take their growing crop with them)
+--   Remove: tap a decoration (back to storage) or an empty soil tile (back to your tile count)
+-- Green squares are free, yellow ones have a decoration. Gates, paths and building spots stay
+-- clear (shared/GardenGrid). Display only: the server checks every request.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,19 +28,24 @@ local C = Kit.Colors
 
 local BuildController = {}
 
+BuildController.Soil = "soil" -- item id for soil tiles (decorations use their Decor ids)
+
 local FREE = Color3.fromRGB(110, 230, 120)
 local TAKEN = Color3.fromRGB(255, 210, 70)
+local PICKED = Color3.fromRGB(255, 140, 40)
 local BAD = Color3.fromRGB(240, 80, 80)
 local FACING = { "North", "East", "South", "West" }
 
 local active = false
-local selected: string? = nil
+local mode = "place" -- "place" | "move" | "remove"
+local selected: string? = nil -- item to place
+local moveFrom: string? = nil -- square picked up by the Move tool
 local turns = 0
-local removing = false
 
 local gui: ScreenGui
 local titleLabel: TextLabel
 local turnButton: TextButton
+local moveButton: TextButton
 local removeButton: TextButton
 local overlay: Folder? = nil
 local hover: Part? = nil
@@ -61,15 +69,21 @@ local function plotFrame(plot: Instance): (Vector3?, number)
 	return nil, 0
 end
 
-local function soilTiles(plot: Instance): { BasePart }
-	local list = {}
-	local tiles = plot:FindFirstChild("Tiles")
-	for _, tile in tiles and tiles:GetChildren() or {} do
-		if tile:IsA("BasePart") and tile:GetAttribute("TileId") ~= nil then
-			table.insert(list, tile)
-		end
+local function layout(data: any): ({ [string]: boolean }, { [string]: any })
+	local plotData = data and data.Plot or {}
+	return plotData.Soil or {}, plotData.Garden or {}
+end
+
+local function itemName(data: any, cellId: string): string
+	local soil, garden = layout(data)
+	local entry = garden[cellId]
+	if entry and Decor.ById[entry.D] then
+		local decor = Decor.ById[entry.D]
+		return `{decor.Icon} {decor.Name}`
+	elseif soil[cellId] then
+		return if data.Crops and data.Crops[cellId] then "🟫 Soil tile (with its crop)" else "🟫 Soil tile"
 	end
-	return list
+	return "item"
 end
 
 local function square(color: Color3, transparency: number, position: Vector3, size: number, parent: Instance): Part
@@ -93,19 +107,38 @@ local function updateBar()
 		return
 	end
 	local data = DataController.Get()
-	local decor = selected and Decor.ById[selected]
-	if removing then
-		titleLabel.Text = "🗑 Remove: tap a decoration to put it back in storage"
-	elseif decor then
+	-- the turn button only matters for decorations
+	local turning = mode == "place" and selected ~= nil and selected ~= BuildController.Soil
+	if mode == "move" and moveFrom and data then
+		local _, garden = layout(data)
+		turning = garden[moveFrom] ~= nil
+	end
+	turnButton.Visible = turning
+	if mode == "remove" then
+		titleLabel.Text = "🗑 Remove: tap a decoration (back to storage) or an empty soil tile"
+	elseif mode == "move" then
+		titleLabel.Text = if moveFrom and data then `✋ Moving {itemName(data, moveFrom)}: tap a green square` else "✋ Move: tap a decoration or soil tile to pick it up"
+	elseif selected == BuildController.Soil then
+		local placed = if data then GardenGrid.CountSoil(data) else 0
+		local allowance = if data then GardenGrid.SoilAllowance(data) else 0
+		titleLabel.Text = `🟫 Soil tiles: {placed} / {allowance} placed. Tap a green square to add one`
+	elseif selected and Decor.ById[selected] then
+		local decor = Decor.ById[selected]
 		local owned = data and data.Inventory and data.Inventory.Decor and data.Inventory.Decor[decor.Id] or 0
 		local cost = if owned > 0 then `have {owned}` else `{Kit.Icons.Coins} {Util.FormatNumber(decor.Cost)}{if decor.Essence then ` + {Kit.Icons.Essence} {decor.Essence}` else ""}`
-		titleLabel.Text = `{decor.Icon} {decor.Name} ({cost}): tap a green square or a soil tile`
+		titleLabel.Text = `{decor.Icon} {decor.Name} ({cost}): tap a green square`
 	else
-		titleLabel.Text = "Tap Pick to choose a decoration"
+		titleLabel.Text = "Tap Pick or Soil to place something, or Move"
 	end
 	turnButton.Text = `↻ {FACING[turns + 1]}`
-	removeButton.BackgroundColor3 = if removing then C.Bad else C.Panel
-	removeButton.Text = if removing then "🗑 Removing" else "🗑 Remove"
+	moveButton.BackgroundColor3 = if mode == "move" then C.Premium else C.Panel
+	removeButton.BackgroundColor3 = if mode == "remove" then C.Bad else C.Panel
+end
+
+local function setMode(newMode: string)
+	mode = newMode
+	moveFrom = nil
+	updateBar()
 end
 
 local function buildOverlay()
@@ -123,36 +156,37 @@ local function buildOverlay()
 	if not center then
 		return
 	end
-	local offsets = {}
-	for _, tile in soilTiles(plot) do
-		table.insert(offsets, tile.Position - center)
+	local soil, garden = layout(data)
+	if moveFrom and not soil[moveFrom] and not garden[moveFrom] then
+		moveFrom = nil -- it was moved or removed
 	end
-	local garden = (data.Plot and data.Plot.Garden) or {}
 	local folder = Instance.new("Folder")
 	folder.Name = "BuildGrid"
 	local range = GardenGrid.Range
 	for i = -range, range do
 		for j = -range, range do
-			local taken = garden[GardenGrid.CellId(i, j)] ~= nil
-			if taken or not GardenGrid.IsBlocked(i, j, offsets) then
-				local p = center + GardenGrid.Offset(i, j)
-				square(if taken then TAKEN else FREE, 0.65, Vector3.new(p.X, top + 0.08, p.Z), GardenGrid.CellSize - 0.8, folder)
+			local id = GardenGrid.CellId(i, j)
+			local p = center + GardenGrid.Offset(i, j)
+			if id == moveFrom then
+				square(PICKED, 0.3, Vector3.new(p.X, top + (if soil[id] then 0.75 else 0.1), p.Z), GardenGrid.CellSize - 0.4, folder)
+			elseif not soil[id] and (garden[id] ~= nil or not GardenGrid.IsBlocked(i, j)) then
+				square(if garden[id] then TAKEN else FREE, 0.65, Vector3.new(p.X, top + 0.08, p.Z), GardenGrid.CellSize - 0.8, folder)
 			end
 		end
 	end
-	local marker = square(Color3.new(1, 1, 1), 1, Vector3.new(center.X, top + 0.15, center.Z), GardenGrid.CellSize - 0.2, folder)
-	hover = marker
+	hover = square(Color3.new(1, 1, 1), 1, Vector3.new(center.X, top + 0.15, center.Z), GardenGrid.CellSize - 0.2, folder)
 	folder.Parent = Workspace
 	overlay = folder
 end
 
--- What is under a screen point: a soil tile, or a grass square
-type Target = { Kind: string, Id: string, Position: Vector3, Size: number, Ok: boolean }
+-- The square under a screen point, and whether the current tool works there
+type Target = { Id: string, Position: Vector3, Soil: boolean, Item: boolean, Ok: boolean }
 
 local function targetAt(screen: Vector2): Target?
 	local plot = myPlot()
 	local camera = Workspace.CurrentCamera
-	if not plot or not camera then
+	local data = DataController.Get()
+	if not plot or not camera or not data then
 		return nil
 	end
 	local center, top = plotFrame(plot)
@@ -164,28 +198,28 @@ local function targetAt(screen: Vector2): Target?
 		return nil
 	end
 	local point = ray.Origin + ray.Direction * ((top - ray.Origin.Y) / ray.Direction.Y)
-	local data = DataController.Get()
-	local offsets = {}
-	for _, tile in soilTiles(plot) do
-		local d = tile.Position - point
-		if math.abs(d.X) <= tile.Size.X / 2 and math.abs(d.Z) <= tile.Size.Z / 2 then
-			local tileId = tile:GetAttribute("TileId") :: string
-			local decorated = data and data.Plot and data.Plot.Decor and data.Plot.Decor[tileId] ~= nil
-			local planted = data and data.Crops and data.Crops[tileId] ~= nil
-			local ok = if removing then decorated else (not decorated and not planted)
-			return { Kind = "Tile", Id = tileId, Position = tile.Position, Size = tile.Size.X, Ok = ok == true }
-		end
-		table.insert(offsets, tile.Position - center)
-	end
 	local i, j = GardenGrid.CellAt(point - center)
 	if not i or not j then
 		return nil
 	end
-	local cellId = GardenGrid.CellId(i, j)
-	local taken = data and data.Plot and data.Plot.Garden and data.Plot.Garden[cellId] ~= nil
-	local ok = if removing then taken else (not taken and not GardenGrid.IsBlocked(i, j, offsets))
+	local id = GardenGrid.CellId(i, j)
+	local soil, garden = layout(data)
+	local hasSoil = soil[id] == true
+	local isItem = hasSoil or garden[id] ~= nil
+	local free = not isItem and not GardenGrid.IsBlocked(i, j)
+	local ok
+	if mode == "remove" then
+		ok = garden[id] ~= nil or (hasSoil and not (data.Crops and data.Crops[id]))
+	elseif mode == "move" then
+		ok = if moveFrom then (free or isItem) else isItem -- tapping another item picks that one instead
+	else
+		ok = free and selected ~= nil
+		if selected == BuildController.Soil then
+			ok = ok and GardenGrid.CountSoil(data) < GardenGrid.SoilAllowance(data)
+		end
+	end
 	local p = center + GardenGrid.Offset(i, j)
-	return { Kind = "Cell", Id = cellId, Position = Vector3.new(p.X, top, p.Z), Size = GardenGrid.CellSize, Ok = ok == true }
+	return { Id = id, Position = Vector3.new(p.X, top, p.Z), Soil = hasSoil, Item = isItem, Ok = ok == true }
 end
 
 local function showHover(screen: Vector2)
@@ -197,28 +231,43 @@ local function showHover(screen: Vector2)
 		hover.Transparency = 1
 		return
 	end
-	local y = if target.Kind == "Tile" then target.Position.Y + 0.3 else target.Position.Y + 0.15
-	hover.Size = Vector3.new(target.Size - 0.2, 0.12, target.Size - 0.2)
-	hover.Position = Vector3.new(target.Position.X, y, target.Position.Z)
+	hover.Position = Vector3.new(target.Position.X, target.Position.Y + (if target.Soil then 0.75 else 0.15), target.Position.Z)
 	hover.Color = if target.Ok then Color3.new(1, 1, 1) else BAD
 	hover.Transparency = 0.35
 end
 
 local function act(screen: Vector2)
 	local target = targetAt(screen)
-	if not target then
+	local data = DataController.Get()
+	if not target or not data then
 		return
 	end
-	if removing then
-		if target.Ok then
+	local _, garden = layout(data)
+	if mode == "remove" then
+		if garden[target.Id] then
 			Remotes.Get("RemoveDecor"):FireServer(target.Id)
+		elseif target.Soil then
+			Remotes.Get("RemoveSoil"):FireServer(target.Id) -- the server explains if a crop grows there
 		end
+	elseif mode == "move" then
+		if target.Item then
+			-- pick it up (or pick a different one); decorations keep their facing until you turn them
+			moveFrom = if moveFrom == target.Id then nil else target.Id
+			local entry = moveFrom and garden[moveFrom]
+			if entry then
+				turns = (entry.R or 0) % 4
+			end
+			updateBar()
+			buildOverlay()
+		elseif moveFrom then
+			Remotes.Get("MoveItem"):FireServer(moveFrom, target.Id, if garden[moveFrom] then turns else nil)
+			moveFrom = nil
+			updateBar()
+		end
+	elseif selected == BuildController.Soil then
+		Remotes.Get("PlaceSoil"):FireServer(target.Id)
 	elseif selected then
-		if target.Kind == "Tile" then
-			Remotes.Get("PlaceDecor"):FireServer(selected, target.Id)
-		else
-			Remotes.Get("PlaceDecorAt"):FireServer(selected, target.Id, turns)
-		end
+		Remotes.Get("PlaceDecorAt"):FireServer(selected, target.Id, turns)
 	end
 end
 
@@ -226,13 +275,15 @@ function BuildController.IsActive(): boolean
 	return active
 end
 
--- Enter build mode with a decoration chosen (or nil to only remove / pick later)
-function BuildController.Begin(decorId: string?)
+-- Enter build mode with an item to place (BuildController.Soil or a decoration id), or nil to
+-- start with the Move tool
+function BuildController.Begin(itemId: string?)
 	if not myPlot() then
 		return
 	end
-	selected = decorId
-	removing = decorId == nil
+	selected = itemId
+	mode = if itemId then "place" else "move"
+	moveFrom = nil
 	active = true
 	gui.Enabled = true
 	updateBar()
@@ -241,6 +292,7 @@ end
 
 function BuildController.Stop()
 	active = false
+	moveFrom = nil
 	gui.Enabled = false
 	if overlay then
 		overlay:Destroy()
@@ -254,29 +306,38 @@ function BuildController.Start()
 	local bar = Kit.New("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 72), Size = UDim2.new(1, -24, 0, 108), BackgroundColor3 = C.Hud, BackgroundTransparency = 0.1, Parent = gui }, {
 		Kit.Corner(14),
 		Kit.Padding(8),
-		Kit.New("UISizeConstraint", { MaxSize = Vector2.new(540, 108) }),
+		Kit.New("UISizeConstraint", { MaxSize = Vector2.new(620, 108) }),
 	})
 	titleLabel = Kit.Label({ Text = "", TextSize = 15, TextWrapped = true, Size = UDim2.new(1, 0, 0, 38), Parent = bar })
 	local row = Kit.New("Frame", { Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, Parent = bar }, {
-		Kit.New("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }),
+		Kit.New("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
 	local function button(text: string, color: Color3, order: number, onClick: () -> ()): TextButton
-		return Kit.Button({ Text = text, TextSize = 15, Size = UDim2.new(0.25, -6, 1, 0), BackgroundColor3 = color, LayoutOrder = order, Parent = row }, onClick)
+		return Kit.Button({ Text = text, TextSize = 14, TextWrapped = true, Size = UDim2.new(1 / 6, -5, 1, 0), BackgroundColor3 = color, LayoutOrder = order, Parent = row }, onClick)
 	end
 	button("🪴 Pick", C.Good, 1, function()
 		require(script.Parent.Parent:WaitForChild("Panels"):WaitForChild("DecorPanel")).Open()
 	end)
-	turnButton = button("↻ North", C.Panel, 2, function()
+	button("🟫 Soil", Color3.fromRGB(150, 105, 65), 2, function()
+		selected = BuildController.Soil
+		setMode("place")
+		buildOverlay()
+	end)
+	moveButton = button("✋ Move", C.Panel, 3, function()
+		setMode(if mode == "move" then "place" else "move")
+		buildOverlay()
+	end)
+	turnButton = button("↻ North", C.Panel, 4, function()
 		turns = (turns + 1) % 4
 		updateBar()
 	end)
-	removeButton = button("🗑 Remove", C.Panel, 3, function()
-		removing = not removing
-		updateBar()
+	removeButton = button("🗑 Remove", C.Panel, 5, function()
+		setMode(if mode == "remove" then "place" else "remove")
+		buildOverlay()
 	end)
-	button("✓ Done", C.Accent, 4, BuildController.Stop)
+	button("✓ Done", C.Accent, 6, BuildController.Stop)
 
-	-- A tap or click (not a camera drag) places or removes
+	-- A tap or click (not a camera drag) uses the current tool
 	local pressStart: { [InputObject]: { Position: Vector2, Time: number } } = {}
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not active or processed then

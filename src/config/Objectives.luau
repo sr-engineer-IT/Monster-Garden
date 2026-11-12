@@ -25,7 +25,7 @@ Objectives.List = {
 	{ Id = "petal", Text = "Collect a glowing Moon Petal", Event = "Petal", Count = 1, XP = 20 },
 	{ Id = "feed3", Text = "Feed your creature three times", Event = "Feed", Count = 3, XP = 30 },
 	{ Id = "swarmers10", Text = "Defeat 10 Swarmers", Event = "Kill:swarmer", Count = 10, XP = 50 },
-	{ Id = "expand", Text = "Expand your plot at the merchant cart", Event = "Expand", Count = 1, XP = 40 },
+	{ Id = "expand", Text = "Buy more farm land at the merchant cart", Event = "Expand", Count = 1, XP = 40 },
 	{ Id = "night3", Text = "Survive 3 nights", Stat = "NightsSurvived", Count = 3, XP = 60 },
 	{ Id = "level5", Text = "Reach Garden Level 5", Stat = "GardenLevel", Count = 5, XP = 100 },
 	{ Id = "egg", Text = "Buy a creature egg", Event = "BuyEgg", Count = 1, XP = 50 },

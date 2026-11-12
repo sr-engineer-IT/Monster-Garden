@@ -23,7 +23,7 @@ local DefaultProfile: Types.ProfileData = {
 	Unlocks = {}, -- feature key -> true
 	TutorialDone = {}, -- tip id -> true
 	VeteranSkipUsed = false,
-	Plot = { Tiles = {}, Buildings = {}, SoilLevel = 1, SizeIndex = 1, Decor = {}, Garden = {} }, -- Decor: tileId -> decoration id; Garden: grass cellId -> { D = decoration id, R = turn 0-3 }
+	Plot = { Tiles = {}, Buildings = {}, SoilLevel = 1, SizeIndex = 1, Decor = {}, Garden = {}, Soil = {}, SoilReady = false }, -- build grid (shared/GardenGrid): Soil: cellId -> true (soil tile); Garden: cellId -> { D = decoration id, R = turn 0-3 }; SoilReady: first tiles placed. Decor: old soil-tile decorations (moved to Garden in v3)
 	Crops = {}, -- tileId -> CropRecord
 	Inventory = {
 		Seeds = table.clone(Crops.StarterSeeds),
