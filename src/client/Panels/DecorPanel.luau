@@ -46,6 +46,22 @@ function DecorPanel.Open()
 		return order
 	end
 	local stored = (data.Inventory and data.Inventory.Decor) or {}
+	-- how many of each decoration stand in the garden right now
+	local placedCount: { [string]: number } = {}
+	for _, entry in (data.Plot and data.Plot.Garden) or {} do
+		if type(entry) == "table" and entry.D then
+			placedCount[entry.D] = (placedCount[entry.D] or 0) + 1
+		end
+	end
+	-- Name + "2 in storage · 3 placed" on the first line, a short note on the second
+	local function itemLabels(row: Instance, decor: Decor.Decor, note: string, buttonWidth: number)
+		local have, placed = stored[decor.Id] or 0, placedCount[decor.Id] or 0
+		Kit.Label({ Text = `{decor.Icon} {decor.Name}`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -buttonWidth, 0, 24), ZIndex = 23, Parent = row })
+		if have > 0 or placed > 0 then
+			Kit.Label({ Text = `📦 {have} in storage  ·  ✅ {placed} placed`, TextSize = 13, TextColor3 = C.Coins, TextXAlignment = Enum.TextXAlignment.Right, Size = UDim2.new(1, -buttonWidth - 10, 0, 24), ZIndex = 23, Parent = row })
+		end
+		Kit.Label({ Text = note, TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -buttonWidth, 0, 18), ZIndex = 23, Parent = row })
+	end
 
 	local info = Kit.Row(list, nextOrder(), 96)
 	Kit.Label({
@@ -83,8 +99,7 @@ function DecorPanel.Open()
 				Kit.Heading(list, "In storage", nextOrder())
 			end
 			local row = Kit.Row(list, nextOrder(), 64)
-			Kit.Label({ Text = `{decor.Icon} {decor.Name}  x{stored[decor.Id]}`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -120, 0, 24), ZIndex = 23, Parent = row })
-			Kit.Label({ Text = "Free to place (you own it)", TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -120, 0, 18), ZIndex = 23, Parent = row })
+			itemLabels(row, decor, "Free to place (you own it)", 120)
 			Kit.RowButton(row, 1, "Place", C.Good, function()
 				beginBuild(decor.Id)
 			end, 104)
@@ -95,8 +110,7 @@ function DecorPanel.Open()
 	for _, decor in Decor.List do
 		local locked = data.GardenLevel < decor.MinLevel
 		local row = Kit.Row(list, nextOrder(), 64)
-		Kit.Label({ Text = `{decor.Icon} {decor.Name}`, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -150, 0, 24), ZIndex = 23, Parent = row })
-		Kit.Label({ Text = `{decor.Info}   {costText(decor)}`, TextSize = 13, TextColor3 = C.Muted, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, -150, 0, 18), ZIndex = 23, Parent = row })
+		itemLabels(row, decor, `{decor.Info}   {costText(decor)}`, 150)
 		if locked then
 			row.BackgroundColor3 = C.Locked
 			Kit.RowButton(row, 1, `{Kit.Icons.Lock} Lv {decor.MinLevel}`, C.Locked, function() end, 134)

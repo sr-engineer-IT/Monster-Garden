@@ -58,7 +58,7 @@ Puzzles.OddOneOut = {
 	{ Items = { "❄️ Snow", "🔥 Fire", "🧊 Ice", "⛄ Snowman" }, Answer = 2, Why = "Fire is hot, the rest are cold." },
 	{ Items = { "2", "4", "7", "8" }, Answer = 3, Why = "7 is odd, the rest are even." },
 	{ Items = { "🐮 Cow", "🐑 Sheep", "🐔 Chicken", "🦊 Fox" }, Answer = 4, Why = "The fox does not make goods (milk, wool, eggs)." },
-	{ Items = { "🌧️ Rain", "💧 Water", "🌊 Wave", "🪨 Rock" }, Answer = 4, Why = "A rock is not wet." },
+	{ Items = { "🌧️ Rain", "💧 Water", "🌊 Wave", "🗿 Rock" }, Answer = 4, Why = "A rock is not wet." },
 	{ Items = { "🎃 Pumpkin", "🍊 Orange", "🥕 Carrot", "🍆 Eggplant" }, Answer = 4, Why = "The eggplant is purple, the rest are orange." },
 	{ Items = { "🏠 House", "🏚️ Shed", "🏰 Castle", "🌳 Tree" }, Answer = 4, Why = "A tree is not a building." },
 	{ Items = { "10", "20", "30", "35" }, Answer = 4, Why = "35 does not end in 0." },

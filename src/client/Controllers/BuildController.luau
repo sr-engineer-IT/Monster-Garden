@@ -315,7 +315,7 @@ function BuildController.Start()
 	local function button(text: string, color: Color3, order: number, onClick: () -> ()): TextButton
 		return Kit.Button({ Text = text, TextSize = 14, TextWrapped = true, Size = UDim2.new(1 / 6, -5, 1, 0), BackgroundColor3 = color, LayoutOrder = order, Parent = row }, onClick)
 	end
-	button("🪴 Pick", C.Good, 1, function()
+	button("🌻 Pick", C.Good, 1, function()
 		require(script.Parent.Parent:WaitForChild("Panels"):WaitForChild("DecorPanel")).Open()
 	end)
 	button("🟫 Soil", Color3.fromRGB(150, 105, 65), 2, function()

@@ -63,8 +63,8 @@ Kit.Icons = {
 	Seed = "🌱",
 	Quests = "📜",
 	Rebirth = "🔁",
-	Decor = "🪴",
-	Garden = "🪴",
+	Decor = "🌻",
+	Garden = "🌻",
 	Upgrades = "🔧",
 }
 
